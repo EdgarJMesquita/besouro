@@ -113,7 +113,7 @@ const counterSlice = createSlice({
 export const rootReducer = combineReducers({ counter: counterSlice.reducer });
 export const store = configureStore({ reducer: rootReducer });
 
-Besouro.setReduxStore(store, rootReducer).init();
+Besouro.redux(store, rootReducer).init();
 ```
 
 <div>
@@ -133,7 +133,7 @@ import { create } from 'zustand';
 
 export const useCounterStore = create<{ count: number }>(() => ({ count: 0 }));
 
-Besouro.setZustandStores({ counter: useCounterStore }).init();
+Besouro.zustand({ counter: useCounterStore }).init();
 ```
 
 <div>
@@ -153,7 +153,7 @@ import { atom, getDefaultStore } from 'jotai';
 export const countAtom = atom(0);
 export const stepAtom = atom(1);
 
-Besouro.setJotaiAtoms(getDefaultStore(), {
+Besouro.jotai(getDefaultStore(), {
   count: countAtom,
   step: stepAtom,
 }).init();
@@ -175,7 +175,7 @@ Only the atoms you name are captured.
 import { Besouro } from 'besouro';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-Besouro.setAsyncStorageHandler(AsyncStorage).init();
+Besouro.asyncStorage(AsyncStorage).init();
 ```
 
 <div>
@@ -195,7 +195,7 @@ import { createMMKV } from 'react-native-mmkv';
 export const storage = createMMKV();
 export const settings = createMMKV({ id: 'settings' });
 
-Besouro.setMMKVInstances({ default: storage, settings }).init();
+Besouro.mmkv({ default: storage, settings }).init();
 ```
 
 <div>
@@ -210,7 +210,7 @@ Besouro.setMMKVInstances({ default: storage, settings }).init();
 import { Besouro } from 'besouro';
 import { Manager } from 'socket.io-client';
 
-Besouro.setSocketIOManager(Manager).init();
+Besouro.socketIO(Manager).init();
 ```
 
 <div>
@@ -227,7 +227,7 @@ import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import notifee from '@notifee/react-native';
 
-Besouro.setNotificationsHandlers({
+Besouro.notifications({
   expoNotifications: Notifications,
   firebaseMessaging: messaging,
   notifee,
@@ -255,13 +255,13 @@ import { cartAtom, userAtom } from './state/atoms';
 import { storage, settings } from './stores/mmkv';
 
 Besouro.configure({ accent: '#7c3aed' })
-  .setReduxStore(store, rootReducer)
-  .setZustandStores({ cart: useCartStore })
-  .setJotaiAtoms(getDefaultStore(), { cart: cartAtom, user: userAtom })
-  .setAsyncStorageHandler(AsyncStorage)
-  .setMMKVInstances({ default: storage, settings })
-  .setSocketIOManager(Manager)
-  .setNotificationsHandlers({ notifee })
+  .redux(store, rootReducer)
+  .zustand({ cart: useCartStore })
+  .jotai(getDefaultStore(), { cart: cartAtom, user: userAtom })
+  .asyncStorage(AsyncStorage)
+  .mmkv({ default: storage, settings })
+  .socketIO(Manager)
+  .notifications({ notifee })
   .init();
 ```
 

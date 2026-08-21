@@ -40,7 +40,7 @@ export interface JotaiStoreLike {
 /** The atoms to watch, keyed by the name each appears under in the drawer. */
 export type JotaiAtoms = Record<string, JotaiAtomLike>;
 
-/** What {@link installJotaiInspector} — and `setJotaiAtoms` — takes. */
+/** What {@link installJotaiInspector} — and `jotai` — takes. */
 export interface JotaiInspectorPeers {
   store: JotaiStoreLike;
   atoms: JotaiAtoms;

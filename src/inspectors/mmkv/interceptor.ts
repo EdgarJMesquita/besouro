@@ -4,7 +4,7 @@
  * An MMKV store is an instance the app creates, not a module singleton, and an app
  * routinely holds several (a default one, an encrypted one, one per user), so the
  * consumer declares the instances to watch in the config:
- * `setMMKVInstances({ default: storage })`. Install attaches to each, keyed by the
+ * `mmkv({ default: storage })`. Install attaches to each, keyed by the
  * map's names.
  *
  * {@link installMMKVInspector} is the only way in — there is deliberately no

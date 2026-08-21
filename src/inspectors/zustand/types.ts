@@ -4,7 +4,7 @@
  * Structural stand-ins so the library never imports `zustand` itself: a store from
  * `create(...)` (the hook, which also carries the store API) or `createStore(...)`
  * (the vanilla store) both satisfy `ZustandStoreLike`. A consumer passes their real
- * store to `setZustandStores` and structural typing does the rest.
+ * store to `zustand` and structural typing does the rest.
  */
 
 /** Structural subset of a Zustand store (vanilla store or the `create` hook). */

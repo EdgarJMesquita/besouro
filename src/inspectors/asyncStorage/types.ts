@@ -3,7 +3,7 @@
  *
  * A structural stand-in for `@react-native-async-storage/async-storage` so the
  * library never imports (or bundles) the optional peer — §4.1. A consumer passes
- * their real AsyncStorage module to `setAsyncStorageHandler` and structural typing
+ * their real AsyncStorage module to `asyncStorage` and structural typing
  * does the rest.
  */
 

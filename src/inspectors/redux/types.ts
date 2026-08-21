@@ -36,7 +36,7 @@ export interface ReduxStoreLike<State = unknown> {
   replaceReducer: (nextReducer: ReduxReducerLike<State>) => void;
 }
 
-/** What {@link installReduxInspector} — and `setReduxStore` — takes. */
+/** What {@link installReduxInspector} — and `redux` — takes. */
 export interface ReduxInspectorPeers<State = unknown> {
   store: ReduxStoreLike<State>;
   rootReducer: ReduxReducerLike<State>;

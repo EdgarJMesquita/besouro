@@ -3,7 +3,7 @@
  *
  * Structural stand-ins for the socket.io-client shapes the inspector touches. They
  * exist so the library never imports (or bundles) socket.io-client: a consumer
- * passes their real `Manager` to `setSocketIOManager` and structural typing does
+ * passes their real `Manager` to `socketio` and structural typing does
  * the rest.
  */
 
@@ -37,7 +37,7 @@ export interface SocketIOManagerLike {
 export interface SocketIOInspectorOptions {
   /**
    * The `Manager` class from `socket.io-client`, as supplied to
-   * `setSocketIOManager`. Every socket the app creates through it is captured
+   * `socketio`. Every socket the app creates through it is captured
    * automatically. Injected rather than imported so the library never depends on or
    * bundles socket.io-client.
    */

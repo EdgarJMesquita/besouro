@@ -12,7 +12,7 @@ export type LocalePreference = 'system' | 'en' | 'pt' | 'es';
  *
  * The inspectors that require a dependency (asyncStorage, mmkv, zustand, redux,
  * jotai, socketio, notifications) are deliberately absent: supplying the dependency
- * via the matching `set*` method *is* their switch, and a second one here would be
+ * via the matching inspector method *is* their switch, and a second one here would be
  * two controls for one lamp.
  *
  * Values are `boolean` today. They are keyed rather than flattened into

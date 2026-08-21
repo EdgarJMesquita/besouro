@@ -9,7 +9,7 @@
  * - **Dependency-required** — asyncStorage, mmkv, zustand, redux, jotai, socketio,
  *   notifications. Each
  *   watches a module or store the consumer owns, and the library never imports one
- *   (so it depends on and bundles none of them). The matching `set*` method both
+ *   (so it depends on and bundles none of them). The matching inspector method both
  *   supplies the dependency and enables the inspector; there is no zero-argument
  *   form, because an inspector without its dependency would render a tab that can
  *   never populate.
@@ -92,10 +92,10 @@ export interface BesouroBuilder {
    * ```ts
    * import AsyncStorage from '@react-native-async-storage/async-storage';
    *
-   * Besouro.setAsyncStorageHandler(AsyncStorage);
+   * Besouro.asyncStorage(AsyncStorage);
    * ```
    */
-  setAsyncStorageHandler(asyncStorage: AsyncStorageLike): BesouroBuilder;
+  asyncStorage(asyncStorage: AsyncStorageLike): BesouroBuilder;
 
   /**
    * Turn on the MMKV inspector — every write, removal and clear, plus each
@@ -111,10 +111,10 @@ export interface BesouroBuilder {
    *
    * export const storage = createMMKV();
    *
-   * Besouro.setMMKVInstances({ default: storage });
+   * Besouro.mmkv({ default: storage });
    * ```
    */
-  setMMKVInstances(instances: MMKVInstances): BesouroBuilder;
+  mmkv(instances: MMKVInstances): BesouroBuilder;
 
   /**
    * Turn on the Zustand inspector — initial state and every transition after it.
@@ -123,10 +123,10 @@ export interface BesouroBuilder {
    *
    * @example
    * ```ts
-   * Besouro.setZustandStores({ cart: useCartStore, auth: useAuthStore });
+   * Besouro.zustand({ cart: useCartStore, auth: useAuthStore });
    * ```
    */
-  setZustandStores(stores: ZustandStores): BesouroBuilder;
+  zustand(stores: ZustandStores): BesouroBuilder;
 
   /**
    * Turn on the Redux inspector — every action that reaches state, and the store's
@@ -149,10 +149,10 @@ export interface BesouroBuilder {
    * export const store = configureStore({ reducer: rootReducer });
    *
    * // devtools.dev.ts
-   * Besouro.setReduxStore(store, rootReducer);
+   * Besouro.redux(store, rootReducer);
    * ```
    */
-  setReduxStore<State>(
+  redux<State>(
     store: ReduxStoreLike<State>,
     rootReducer: ReduxReducerLike<State>
   ): BesouroBuilder;
@@ -170,13 +170,13 @@ export interface BesouroBuilder {
    * import { getDefaultStore } from 'jotai';
    * import { cartAtom, userAtom } from '../state/atoms';
    *
-   * Besouro.setJotaiAtoms(getDefaultStore(), {
+   * Besouro.jotai(getDefaultStore(), {
    *   cart: cartAtom,
    *   user: userAtom,
    * });
    * ```
    */
-  setJotaiAtoms(store: JotaiStoreLike, atoms: JotaiAtoms): BesouroBuilder;
+  jotai(store: JotaiStoreLike, atoms: JotaiAtoms): BesouroBuilder;
 
   /**
    * Turn on the Socket.IO inspector — every frame, on every socket, no per-socket
@@ -189,10 +189,10 @@ export interface BesouroBuilder {
    * ```ts
    * import { Manager } from 'socket.io-client';
    *
-   * Besouro.setSocketIOManager(Manager);
+   * Besouro.socketIO(Manager);
    * ```
    */
-  setSocketIOManager(Manager: SocketIOManagerLike): BesouroBuilder;
+  socketIO(Manager: SocketIOManagerLike): BesouroBuilder;
 
   /**
    * Turn on the notifications inspector.
@@ -208,16 +208,14 @@ export interface BesouroBuilder {
    * import messaging from '@react-native-firebase/messaging';
    * import notifee from '@notifee/react-native';
    *
-   * Besouro.setNotificationsHandlers({
+   * Besouro.notifications({
    *   expoNotifications: Notifications,
    *   firebaseMessaging: messaging,
    *   notifee,
    * });
    * ```
    */
-  setNotificationsHandlers(
-    handlers: NotificationsInspectorPeers
-  ): BesouroBuilder;
+  notifications(handlers: NotificationsInspectorPeers): BesouroBuilder;
 
   /**
    * Start the devtools and mount the floating bubble. Call it last.
@@ -236,25 +234,24 @@ export interface BesouroBuilder {
  * you require behind `if (__DEV__)`.
  *
  * Network, console, websocket, element and fileSystem are already on — `init()`
- * alone is a working setup. The other seven turn on with the `set*` call that
- * feeds them.
+ * alone is a working setup. The other seven turn on with the call that feeds them.
  *
  * @example
  * ```ts
  * import { Besouro } from 'besouro';
  *
  * Besouro.configure()
- *   .setSocketIOManager(Manager)
- *   .setAsyncStorageHandler(AsyncStorage)
- *   .setNotificationsHandlers({
+ *   .socketIO(Manager)
+ *   .asyncStorage(AsyncStorage)
+ *   .notifications({
  *     expoNotifications: Notifications,
  *     firebaseMessaging: messaging,
  *     notifee,
  *   })
- *   .setMMKVInstances({ default: storage })
- *   .setZustandStores({ counter: useCounterStore })
- *   .setReduxStore(store, rootReducer)
- *   .setJotaiAtoms(getDefaultStore(), { cart: cartAtom })
+ *   .mmkv({ default: storage })
+ *   .zustand({ counter: useCounterStore })
+ *   .redux(store, rootReducer)
+ *   .jotai(getDefaultStore(), { cart: cartAtom })
  *   .init();
  * ```
  */
@@ -268,33 +265,33 @@ export const Besouro: BesouroBuilder = {
     controller.configure(options);
     return this;
   },
-  setAsyncStorageHandler(asyncStorage) {
-    controller.setAsyncStorageHandler(asyncStorage);
+  asyncStorage(asyncStorage) {
+    controller.asyncStorage(asyncStorage);
     return this;
   },
-  setMMKVInstances(instances) {
-    controller.setMMKVInstances(instances);
+  mmkv(instances) {
+    controller.mmkv(instances);
     return this;
   },
 
-  setZustandStores(stores) {
-    controller.setZustandStores(stores);
+  zustand(stores) {
+    controller.zustand(stores);
     return this;
   },
-  setReduxStore(store, rootReducer) {
-    controller.setReduxStore(store, rootReducer);
+  redux(store, rootReducer) {
+    controller.redux(store, rootReducer);
     return this;
   },
-  setJotaiAtoms(store, atoms) {
-    controller.setJotaiAtoms(store, atoms);
+  jotai(store, atoms) {
+    controller.jotai(store, atoms);
     return this;
   },
-  setSocketIOManager(Manager) {
-    controller.setSocketIOManager(Manager);
+  socketIO(Manager) {
+    controller.socketIO(Manager);
     return this;
   },
-  setNotificationsHandlers(handlers) {
-    controller.setNotificationsHandlers(handlers);
+  notifications(handlers) {
+    controller.notifications(handlers);
     return this;
   },
   init() {

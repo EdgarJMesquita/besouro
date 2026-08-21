@@ -23,7 +23,7 @@ import { useSyncExternalStore } from 'react';
 
 export interface ZustandStoreInfo {
   storeId: string;
-  /** The key this store appeared under in `setZustandStores`. */
+  /** The key this store appeared under in `zustand`. */
   storeName: string;
   /**
    * When the inspector subscribed. Stands in for a row timestamp in the one case a

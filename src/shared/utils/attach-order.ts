@@ -1,7 +1,7 @@
 /**
  * Order for the tabs that list a **fixed, declared set**: Zustand stores, Jotai
  * atoms, MMKV instances. Each is configured once —
- * `setZustandStores({ counter, cart })` — so the set does not grow while the app
+ * `zustand({ counter, cart })` — so the set does not grow while the app
  * runs, and the order the consumer wrote it in is one they already know.
  *
  * **Why not newest-activity-first**, which is what `useEventGroups` hands these

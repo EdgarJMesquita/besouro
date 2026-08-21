@@ -5,7 +5,7 @@
  * exposes no way to enumerate the atoms a store has touched. So there is nothing to
  * find by inspection, and the consumer declares what to watch, keyed by the name it
  * appears under in the drawer:
- * `setJotaiAtoms(store, { cart: cartAtom, user: userAtom })`.
+ * `jotai(store, { cart: cartAtom, user: userAtom })`.
  *
  * That is a real limitation — a derived atom nobody named stays invisible — and it
  * is chosen over the alternative. `INTERNAL_getBuildingBlocksRev3` plus the

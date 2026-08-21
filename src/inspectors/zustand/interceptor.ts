@@ -3,7 +3,7 @@
  *
  * A Zustand store is an instance you subscribe to, not a global to patch, so the
  * consumer declares the stores to watch in the config:
- * `setZustandStores({ counter: useCounterStore })`. Install subscribes to each,
+ * `zustand({ counter: useCounterStore })`. Install subscribes to each,
  * keyed by the map's names.
  *
  * {@link installZustandInspector} is the only way in — there is deliberately no

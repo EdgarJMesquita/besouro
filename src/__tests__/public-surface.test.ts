@@ -17,13 +17,13 @@ import { Besouro } from '..';
 
 const PUBLIC_METHODS = [
   'configure',
-  'setAsyncStorageHandler',
-  'setMMKVInstances',
-  'setZustandStores',
-  'setReduxStore',
-  'setJotaiAtoms',
-  'setSocketIOManager',
-  'setNotificationsHandlers',
+  'asyncStorage',
+  'mmkv',
+  'zustand',
+  'redux',
+  'jotai',
+  'socketIO',
+  'notifications',
   'init',
 ];
 

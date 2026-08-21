@@ -2,7 +2,7 @@
  * MMKV inspector types — internal.
  *
  * Structural stand-ins so the library never imports `react-native-mmkv` itself
- * (§4.1). A consumer passes their real instances to `setMMKVInstances` and
+ * (§4.1). A consumer passes their real instances to `mmkv` and
  * structural typing does the rest.
  *
  * {@link MMKVLike} deliberately spans v2 through v4 of the library, which disagree

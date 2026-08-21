@@ -27,7 +27,7 @@ one tab per enabled inspector.
 3. **Modular.** Import only the inspectors you use; unused inspectors add no cost.
 4. **Minimal dependencies.** Core has only `react` / `react-native` peers. Storage,
    notification, and socket integrations are **optional peers the consumer provides**
-   through the builder's `set*` methods (Metro can't safely auto-require them — §4.1).
+   through the builder's inspector methods (Metro can't safely auto-require them — §4.1).
 5. **Crash-resilient.** Captured logs persist so a crashed session can be reopened
    and reviewed on the next launch.
 6. **Utility over polish.** A dense, functional, unobtrusive UI optimized for reading
@@ -175,7 +175,7 @@ decides how it is turned on:
   nothing from the consumer, so they are **on by default**.
 - **Dependency-required** — asyncStorage, zustand, socketio, notifications. They
   cannot observe anything without a module or a store map from the consumer (§4.1),
-  so supplying it via the matching `set*` method **is** how they are enabled.
+  so supplying it via the matching inspector method **is** how they are enabled.
 
 ```ts
 import { Besouro } from 'besouro';
@@ -186,7 +186,7 @@ Besouro.configure({
   maxSessions: 10, // retained sessions — the only retention control (§9)
   inspectors: { element: false }, // the five default-on ones; omit to keep all five
 })
-  .setAsyncStorageHandler(AsyncStorage) // optional peer: consumer hands us the module
+  .asyncStorage(AsyncStorage) // optional peer: consumer hands us the module
   .init();
 ```
 
@@ -203,19 +203,20 @@ the call in a module you `require()` behind your own dev check (as `example/` do
 so the whole graph stays out of release bundles.
 
 - `Besouro` — the process-wide builder. `.configure(options?)` sets options,
-  the `set*` methods supply dependencies, `.init()` installs whatever resolved to
+  the inspector methods supply dependencies, `.init()` installs whatever resolved to
   enabled. It is one-shot and returns nothing — there is deliberately no teardown
   (see below). It does **not** self-gate on `__DEV__` —
   deciding when to load is the call site's job (§11). Idempotent — Fast Refresh
   re-running it does not double-patch (guarded at the patch level, §5), and a repeat
-  `set*` call replaces rather than appends.
-- **Dependency setters** — `.setAsyncStorageHandler(AsyncStorage)`,
-  `.setZustandStores(stores)`, `.setReduxStore(store, rootReducer)`,
-  `.setJotaiAtoms(store, atoms)`, `.setSocketIOManager(Manager)`,
-  `.setNotificationsHandlers({ expoNotifications, firebaseMessaging, notifee })`.
-  Each is named for what it takes, and each enables its inspector by being called.
+  inspector call replaces rather than appends.
+- **Inspector methods** — `.asyncStorage(AsyncStorage)`, `.mmkv(instances)`,
+  `.zustand(stores)`, `.redux(store, rootReducer)`,
+  `.jotai(store, atoms)`, `.socketIO(Manager)`,
+  `.notifications({ expoNotifications, firebaseMessaging, notifee })`.
+  Each is named for the inspector it turns on, and calling it is what enables that
+  inspector.
 - **Two mechanisms, one rule.** `configure()` owns _whether and how_ an inspector
-  runs; `set*` owns _the dependency it cannot run without_. The two sets are disjoint
+  runs; the inspector methods own _the dependency it cannot run without_. The two sets are disjoint
   — `InspectorToggles` covers only the self-sufficient five — so there is no
   precedence question about which wins.
 
@@ -271,7 +272,7 @@ then **every** consumer would need **all** of those peers installed or their bun
 would break.
 
 Injection avoids this entirely: the library imports no optional peer, it receives
-each one from the consumer through a `set*` method. Nothing in `src` statically
+each one from the consumer through its inspector method. Nothing in `src` statically
 imports socket.io-client, zustand, notifee, expo-notifications, firebase or
 AsyncStorage, so a peer is only ever referenced by a consumer who already has it
 installed — and an inspector whose peer is never supplied is simply never enabled.
@@ -595,7 +596,7 @@ import { Manager } from 'socket.io-client';
 
 // One-time, in your devtools config — patches Manager.prototype.socket so every
 // io() socket anywhere in the app is captured with no per-socket wiring:
-Besouro.configure().setSocketIOManager(Manager).init();
+Besouro.configure().socketIO(Manager).init();
 ```
 
 The `Manager` class is **injected, not imported** by the library, so the package
@@ -850,7 +851,7 @@ export const useBearStore = create((set) => ({
 }));
 
 // In your dev-only devtools config — import the stores and hand them over:
-Besouro.configure().setZustandStores({ bears: useBearStore }).init();
+Besouro.configure().zustand({ bears: useBearStore }).init();
 ```
 
 Stores created _after_ install are **not captured**. There is deliberately no
@@ -877,7 +878,7 @@ serialized next state (truncated to 500 KB), timestamp.
 
 **A reload writes a new baseline, badged as one.** A full JS reload tears down the
 heap, so `create` runs again and the store really is back at its initial state —
-while the session it belongs to is *adopted* (§9), leaving the pre-reload rows above
+while the session it belongs to is _adopted_ (§9), leaving the pre-reload rows above
 the new baseline in one timeline. The row is therefore recorded again and carries
 `isReload`, which the UI badges **App Reload** where an ordinary baseline reads
 **Initial state** — one badge, the more specific label winning, since a reload's
@@ -888,7 +889,7 @@ fresh one, with the reset itself recorded nowhere.
 
 The flag is native (`core/warm-reload`) because nothing in JS survives a reload to
 report one. The other kind of repeat — a re-install inside one live runtime, from
-Fast Refresh re-running the consumer's devtools module — *is* a duplicate and is
+Fast Refresh re-running the consumer's devtools module — _is_ a duplicate and is
 still skipped: there the store object survives holding its current value, and the
 mark it carries is what says so. The same applies to Jotai atoms (§6.10) and to the
 Redux store (§6.9).
@@ -928,7 +929,7 @@ baseline" stops being true the moment a reload writes a second one. A store nobo
 has touched therefore reads 0 changes while still carrying the row its state is read
 from. The list is ordered by **attachment**, not by activity: the stores are declared
 once in the config, so this is an inventory rather than a feed, and re-sorting it
-whenever some *other* store changed would move the row a reader was reaching for
+whenever some _other_ store changed would move the row a reader was reaching for
 (`shared/utils/attach-order`, shared with §6.10 and §6.11).
 
 Tapping a store opens a **detail view** with a segmented toggle:
@@ -948,7 +949,7 @@ only what the list holds in memory.
 **Clear empties the change log and nothing else.** The attached stores stay listed,
 and Current State goes on showing what each store holds — which needs saying, because
 this tab keeps no state row to survive the delete the way §6.9 and §6.11 do: the
-newest change row *is* the state, and that row is exactly what Clear removes. So with
+newest change row _is_ the state, and that row is exactly what Clear removes. So with
 no rows to read, the pane reads the live store instead (`core/live-state`), and goes
 back to reading rows the moment one is written. A past session never takes that path:
 its state is what its rows recorded, and this launch's stores describe a different
@@ -957,26 +958,26 @@ run. Nothing is written back into the emptied history to achieve it.
 ### 6.9 Redux Inspector
 
 > **Why a separate inspector (not the Zustand one)?** They look alike and are not.
-> A Zustand transition is anonymous — you learn *what changed*. A Redux transition is
+> A Zustand transition is anonymous — you learn _what changed_. A Redux transition is
 > named: the action is the unit of interest, and the state change is its consequence.
 > That inverts the whole tab (a log of actions, not a list of stores), and it inverts
 > what a row stores. Folding them together would mean one of the two rendering
 > badly.
 
-**One store.** `setReduxStore(store, rootReducer)` is singular because Redux is:
-"Only One Redux Store Per Application" is a *Priority A: Essential* rule in Redux's
+**One store.** `redux(store, rootReducer)` is singular because Redux is:
+"Only One Redux Store Per Application" is a _Priority A: Essential_ rule in Redux's
 own style guide, and the genuine multi-store cases — SSR building a store per
 request, micro-frontends composing independent apps — are web and server patterns
 with no React Native analogue. A second call **replaces** the first, which is what
 the name says and what keeps Fast Refresh from installing capture twice.
-`setReduxStores({ … })` remains available as a purely additive future move if a real
-case appears.
+An overload taking a map of stores remains available as a purely additive future
+move if a real case appears.
 
 **Instrumentation: wrap the root reducer.** This is the part worth defending,
 because two more obvious seams both fail:
 
 - **Patching `store.dispatch`** sees only what feature code dispatches.
-  `applyMiddleware` composes its chain over the *pre-patch* dispatch
+  `applyMiddleware` composes its chain over the _pre-patch_ dispatch
   (`dispatch = compose(...chain)(store.dispatch)`), so everything a middleware emits
   from inside — thunks, `createAsyncThunk`'s pending/fulfilled/rejected, all of RTK
   Query — never passes through the patched property. Those are exactly the actions a
@@ -1011,7 +1012,7 @@ export const rootReducer = combineReducers({ cart, auth });
 export const store = configureStore({ reducer: rootReducer });
 
 // In your dev-only devtools config:
-Besouro.configure().setReduxStore(store, rootReducer).init();
+Besouro.configure().redux(store, rootReducer).init();
 ```
 
 We **never import `redux`** — `ReduxStoreLike` is a structural
@@ -1031,7 +1032,7 @@ row, whether an initial row was written because the app reloaded (§6.8), whethe
 **Why a row holds no full state.** Zustand can afford a whole serialized state per
 transition because a Zustand store is small and its transitions are user-paced.
 Redux is dispatched by middleware, timers and RTK Query polling: a 200 KB tree over
-500 actions is ~100 MB in one table, and retention prunes whole *sessions*, never
+500 actions is ~100 MB in one table, and retention prunes whole _sessions_, never
 rows, so nothing throttles it mid-session. A row keeps the delta; the whole tree is a
 registry read away. The initial row is the one exception — it is the session's single
 baseline, and every key is "changed".
@@ -1051,7 +1052,7 @@ row is created once and patched in place thereafter, so it never grows the table
 and the throttle serializes nothing while the app is idle.
 
 This is what the archived State view reads: an equality filter on `is_final`, not a
-replay. Reconstructing state at an *arbitrary* past action would mean folding every
+replay. Reconstructing state at an _arbitrary_ past action would mean folding every
 row of the session in order, which is a different feature — but the per-row
 `changed_state` deltas are what would make it possible, which is why they are kept.
 
@@ -1083,23 +1084,24 @@ scrolling default is for many-sectioned strips like Network's five) — between:
   **omitted entirely** when the single path is just the action type's prefix. RTK
   names actions `slice/action`, so `counter/increment` changing `counter` tells the
   reader what they have already read — and a line that is noise on most rows trains
-  them to ignore it on the rows where it matters: an action that changed *nothing*
-  when it should have, one that changed *more* than its own slice, or one that
-  changed a *different* slice than its name suggests. Suppressing the redundant
+  them to ignore it on the rows where it matters: an action that changed _nothing_
+  when it should have, one that changed _more_ than its own slice, or one that
+  changed a _different_ slice than its name suggests. Suppressing the redundant
   case is what leaves the caption meaning something.
 
   Recording those paths reuses the flash's diff (`utils/changed-paths.ts`) with a
-  cap of six. The cap bounds the *walk*, not just the output, and Redux's
+  cap of six. The cap bounds the _walk_, not just the output, and Redux's
   immutability means an untouched slice is reference-equal and skipped whole — so a
   typical action visits one slice and stops. Tapping one opens a detail with the changed slices as pills and
   `Payload` / `Changed slices` behind `DetailTabs` — each a full-screen §7.1 viewer,
   because a serialized RTK Query response and a changed slice are both full-screen
   objects.
+
 - **State** — for a live session, the whole current state through the §7.1 viewer,
   with **changed values flashing** briefly as actions arrive (see §7.1). For a past
   session it reads that session's closing snapshot instead, under a header naming
   it as such, so the pane is still offered: what it must never do is show the
-  *current* store under a header dated last week, which is the mistake
+  _current_ store under a header dated last week, which is the mistake
   `BROWSER_INSPECTORS` exists to prevent.
 
 The panes are side-by-side rather than stacked (as `ZustandDetail` stacks Current
@@ -1109,18 +1111,18 @@ entries each need the full screen; halving both would leave neither readable.
 Filter/search matches action type, payload and changed slices. **Clear empties the
 action log and leaves the State pane intact** — the closing-state row is excluded
 from the delete (`TableSpec.stateColumn`), because it records what the store is
-*holding* rather than an action it performed.
+_holding_ rather than an action it performed.
 
 ### 6.10 Jotai Inspector
 
 > **Why not the Zustand inspector?** They end up looking alike — a named thing, a
 > current value, a change history — but they are reached differently. A Zustand
-> store is an instance you subscribe to; a Jotai atom is a *value* with no state of
+> store is an instance you subscribe to; a Jotai atom is a _value_ with no state of
 > its own, and the state lives in a store you must also be given. That difference is
 > the whole API, and merging the tabs would mean one of the two lying about what it
 > is watching.
 
-**Declared atoms.** `setJotaiAtoms(store, { cart: cartAtom })`. Jotai exposes no way
+**Declared atoms.** `jotai(store, { cart: cartAtom })`. Jotai exposes no way
 to enumerate the atoms a store has touched, so there is nothing to find by
 inspection — these are the only atoms that can be watched. The store comes too
 because that is what holds the values: `getDefaultStore()` for an app with no
@@ -1141,7 +1143,7 @@ defeating the single dev-only `require` (§11).
 
 We **never import `jotai`**: `JotaiAtomLike` is a structural
 `{ read, debugLabel?, toString }` and `JotaiStoreLike` is `{ get, sub }`. Both
-declare their methods with *method* syntax rather than property syntax, which makes
+declare their methods with _method_ syntax rather than property syntax, which makes
 the parameters bivariant — that is what lets a real `Store`, whose `get` is
 `<Value>(atom: Atom<Value>) => Value`, satisfy the looser shape.
 
@@ -1157,19 +1159,19 @@ timestamp.
 
 **Why a preview column, which Zustand has no need for.** A Zustand store's state is
 always an object, so its changed keys describe the change. An atom is as often
-`atom(0)` or `atom('idle')` — no keys at all, and the *value* is the entire story.
+`atom(0)` or `atom('idle')` — no keys at all, and the _value_ is the entire story.
 The value itself is a heavy column that a list query must not select, so the preview
 is stored separately as a summary column: the head of the serialized value, clipped
 to 120 characters with newlines collapsed. `safeStringify` emits compact JSON, so an
 object is already one line and its first 120 characters are its first few fields —
-`{"items":["SKU-1"],"total":10}` says what the value *is*, where a rendering of its
+`{"items":["SKU-1"],"total":10}` says what the value _is_, where a rendering of its
 shape (`{…} 2`) would only repeat that it is an object with two keys, which the
 changed keys beside it already cover. One rule covers primitives, objects,
 `Map(2) {…}` and `[Function foo]` alike, so there are no per-type cases to keep in
 step.
 
 **Current value comes from the rows**, exactly as Zustand's state does (§6.8). Every
-`JotaiEvent` carries the whole serialized value *and* its preview, so the **newest
+`JotaiEvent` carries the whole serialized value _and_ its preview, so the **newest
 row per atom is that atom's current value**, and one query serves a live session and
 a past one. The list is the grouped aggregate the change counts already come from
 (`EventGroup.newest` brings each atom's name and preview in summary columns); the
@@ -1203,7 +1205,7 @@ successive previews of a growing object are nearly indistinguishable — a colum
 you almost nothing about which row is which. It falls back to the preview when there
 are no keys, which is what keeps `atom(0)` from rendering a blank row — the case
 Zustand never has to handle — and a **baseline** row shows the preview outright,
-since it is the only place the atom's starting value appears. That the row *is* a
+since it is the only place the atom's starting value appears. That the row _is_ a
 baseline is the badge's job, not the column's: naming it there left a Jotai history
 column reading `Initial state · 0` between bare `0` and `1`.
 
@@ -1222,13 +1224,13 @@ pane's.
 > **Why a separate inspector (not the AsyncStorage one)?** Both are persistent
 > key/value storage, and there the resemblance stops. AsyncStorage is one async,
 > string-only module singleton with batch operations and op durations worth showing.
-> MMKV is *many* synchronous, typed instances with no batch operations and no
+> MMKV is _many_ synchronous, typed instances with no batch operations and no
 > duration worth reporting — a shared tab would need an instance column AsyncStorage
 > never fills, a duration column MMKV can only fill with zero, and an operation union
 > where half the members are unreachable from either side.
 
 Inspects writes to `react-native-mmkv`. Enabled via
-`setMMKVInstances({ default: storage })` — the consumer passes the instances (§4.1),
+`mmkv({ default: storage })` — the consumer passes the instances (§4.1),
 keyed by the name each appears under in the drawer.
 
 Plural where §6.7 is singular, and that is the substantive difference: MMKV instances
@@ -1258,20 +1260,20 @@ exact one is worse than either.
 
 **Typing a value means probing for it.** MMKV exposes no "what type is this key",
 so the sweep tries `getString`, `getNumber`, `getBoolean`, `getBuffer` in turn. That
-assumes a mismatch *returns* undefined, which is what the v2/v3 JS classes and the
+assumes a mismatch _returns_ undefined, which is what the v2/v3 JS classes and the
 library's own mock do — but a v4 instance is reached through Nitro's type
 marshalling, where a mismatch can instead throw, or answer `''`. So the probe defends
-against both: each getter is tried defensively, and a *non-empty* string is required
+against both: each getter is tried defensively, and a _non-empty_ string is required
 to claim the key. An empty one is held back until every other getter has declined,
 then reported as the value if none did — otherwise every number and boolean would be
 typed as an empty string and lose its value. An unreadable key is skipped rather than
 allowed to abort the sweep: because the sweep runs inside `safeCapture`, one raising key
 would otherwise take the entire snapshot silently, leaving the Store pane
-permanently empty. For the same reason an *attached* instance is listed even when it
+permanently empty. For the same reason an _attached_ instance is listed even when it
 has no rows at all — a disappearance is a worse failure than an empty tab.
 
 **Reads are not captured, and that is a design decision, not a gap.** MMKV's getters
-are synchronous JSI calls that apps put in render paths *precisely because* they are
+are synchronous JSI calls that apps put in render paths _precisely because_ they are
 cheap. Wrapping them taxes the path that was chosen for being untaxed, and a screen
 re-rendering in a loop would bury the writes — which is what a storage log is read
 for — under thousands of reads. The Contents view shows every key regardless, which
@@ -1281,14 +1283,14 @@ is what a reader actually wants from a key/value store.
 `clearAll`), key, value type (`string` / `number` / `boolean` / `buffer`), value
 (truncated to 500 KB), direction (write / delete), error, timestamp. No
 `durationMs`: the calls are synchronous, so every value would round to zero and the
-column would report precision the number does not have. Buffers are *described*
+column would report precision the number does not have. Buffers are _described_
 (`<binary, N bytes>`) rather than captured — the bytes are opaque to every viewer we
 have, and a blob would spend the session's storage budget rendering as mojibake.
 
 **Current contents live in the database, not in memory.** The inspector writes one
 **snapshot row** per instance per session — `operation: 'snapshot'`, `isFinal: true`
 — carrying the instance's whole contents as a flat `key → value` object. It is
-created at attach and *patched in place* thereafter: refreshed on a throttle while
+created at attach and _patched in place_ thereafter: refreshed on a throttle while
 writes flow, on background, and on a JS fatal, exactly as the Redux inspector keeps
 its closing state (§6.9). One row per instance per session, so the table does not
 grow with a row per sweep however long the session runs.
@@ -1309,7 +1311,7 @@ mirror:
    asymmetry to special-case in the UI.
 2. **Every attached instance appears in the list**, because attach gives it a row.
    Zustand and Jotai reach the same place by a different route (§6.8): their attach
-   records the store's initial state, which *is* an ordinary row, so they too list
+   records the store's initial state, which _is_ an ordinary row, so they too list
    from rows and keep a registry only as the fallback for a capture that threw.
 3. **No incremental mirror to drift.** An earlier design patched an in-memory entry
    map per captured change, which was cheaper per write but could disagree with the
@@ -1323,8 +1325,8 @@ seen until something else marks the instance dirty.
 **Drawer features — instances → detail:** the tab lists the **attached instances**,
 each with its operation count and last change. Built from rows like every other list
 in §6, since attach writes each instance's snapshot row — an instance that is only
-ever *read* still appears, which for a key/value store is the normal case rather than
-an edge one. Ordered by **attachment**, not by activity: `setMMKVInstances(...)`
+ever _read_ still appears, which for a key/value store is the normal case rather than
+an edge one. Ordered by **attachment**, not by activity: `mmkv(...)`
 declares a fixed handful, so the order the consumer wrote them in is the one they
 expect, and a snapshot row patched forward on every sweep would otherwise reorder the
 list by whichever instance the sweep loop reached last (`shared/utils/attach-order`,
@@ -1342,7 +1344,7 @@ the same order Redux puts its actions before its state.
   the only type that can be holding JSON; a number, boolean or buffer descriptor is
   one short scalar and renders as a plain field, with nothing for a collapsible tree
   to act on.
-- **Store** — the snapshot row's contents, as label/value rows. Deliberately *not*
+- **Store** — the snapshot row's contents, as label/value rows. Deliberately _not_
   the §7.1 JSON viewer: an MMKV instance is not a document but a flat set of
   independently-typed keys, and folding them into one object would invent a structure
   the store does not have. The network tab's header list is the right precedent, and
@@ -1350,7 +1352,7 @@ the same order Redux puts its actions before its state.
 
 Filter/search matches instance name, operation and key. **Clear empties the operation
 log and leaves the Store pane intact** — the snapshot row is excluded from the delete
-(`TableSpec.stateColumn`), because it records what the app is *holding*, not what it
+(`TableSpec.stateColumn`), because it records what the app is _holding_, not what it
 did, and a devtool's Clear has never reached into the app's own storage. The instance
 stays listed, reading 0 changes.
 
@@ -1484,7 +1486,7 @@ freezes the UI and can OOM. So we never render the whole document at once.
 try/catch (fall back to the text viewer on failure); flattened arrays are memoized per
 event id so re-opening a row list is instant.
 
-**Change flash (optional).** A viewer rendering *live* state — the Redux State pane
+**Change flash (optional).** A viewer rendering _live_ state — the Redux State pane
 today (§6.9) — takes an optional `flash: { paths, nonce }` and briefly tints the rows
 whose value just changed, fading out over ~900 ms. Several details are load-bearing:
 
@@ -1516,7 +1518,7 @@ drawer costs nothing.
 ## 8. Configuration Reference
 
 `Besouro.configure(options)` takes `BesouroOptions`. `inspectors` switches
-off the five that default on; the other four are enabled by their `set*` method (§4).
+off the five that default on; the other four are enabled by their inspector method (§4).
 
 Payload truncation is deliberately absent from this table — the limits are fixed per
 inspector and listed in §5.1.
@@ -1533,7 +1535,7 @@ interface BesouroOptions {
 }
 
 // The self-sufficient inspectors only — all default true. The other four are
-// governed by whether their set* method was called, so listing them here would be
+// governed by whether their inspector method was called, so listing them here would be
 // two switches for one lamp.
 interface InspectorToggles {
   network?: boolean;
@@ -1643,10 +1645,7 @@ interface Database {
   /** Per-connection / per-store aggregates for the grouped tabs. */
   queryGroups(query: EventGroupQuery): Promise<EventGroup[]>;
   /** One event with its heavy columns, for a detail view. */
-  loadEvent(
-    kind: InspectorKind,
-    id: string
-  ): Promise<BesouroEvent | null>;
+  loadEvent(kind: InspectorKind, id: string): Promise<BesouroEvent | null>;
   countEvents(sessionId: string, kind: InspectorKind): Promise<number>;
   clearKind(sessionId: string, kind: InspectorKind): Promise<void>;
 }
@@ -1841,7 +1840,7 @@ you want — `__DEV__`, a build channel, an internal-user check:
 ```ts
 // App.tsx — the whole devtools graph hangs off this one conditional require.
 if (__DEV__) {
-  require('./tools/besouro'); // configure().set*(...).init() lives here
+  require('./tools/besouro'); // configure().zustand(...).init() lives here
 }
 ```
 
@@ -1849,7 +1848,7 @@ A **static** condition (`if (__DEV__)`) lets the bundler dead-code-eliminate the
 library, its inspectors, and their optional peers from release builds outright. That is
 the intended default, and what `example/` does.
 
-Optional peers are only referenced by the modules a consumer hands to a `set*` method,
+Optional peers are only referenced by the modules a consumer hands to an inspector method,
 so they never enter a bundle that doesn't use them (§4.1).
 
 ### If you deliberately ship it in a release build
@@ -1878,7 +1877,8 @@ the "inspector degraded" console warning outside dev (`core/base-interceptor.ts`
 - **optional peers (consumer-provided, declared in `peerDependenciesMeta`):**
   `@react-native-async-storage/async-storage`, `expo-notifications`,
   `@react-native-firebase/messaging`, `@notifee/react-native`, `socket.io-client`,
-  `zustand`. Each is passed in by the consumer through `configure`/`set*`, never
+  `zustand`. Each is passed in by the consumer through `configure` or its inspector
+  method, never
   statically required (§4.1). (`zustand` is listed for discoverability; the inspector
   attaches to a store instance structurally and never imports the package.)
 - **persistence:** no dependency at all. Events are stored in the SQLite each
@@ -2008,9 +2008,9 @@ names a single inspector. State belonging to one inspector lives in that
 inspector's own `store/` folder instead (`notifications/store/device-tokens.ts`,
 `mmkv/store/instances.ts`, `zustand/store/stores.ts`, `jotai/store/atoms.ts`,
 `redux/store/snapshot.ts`, `element/store/inspection.ts`). These are the
-**live-view** stores: facts about *this launch* rather than a capture history, never
+**live-view** stores: facts about _this launch_ rather than a capture history, never
 persisted with the session. Most hold only attachment metadata — what a captured row
-cannot say — because the rows are the source of truth for everything a row *can*
+cannot say — because the rows are the source of truth for everything a row _can_
 carry; `redux/store/snapshot.ts` is the exception, holding a whole state tree its
 delta rows do not (§6.9).
 

@@ -20,7 +20,7 @@ import { useSyncExternalStore } from 'react';
 
 export interface JotaiAtomInfo {
   atomId: string;
-  /** The key this atom appeared under in `setJotaiAtoms`. */
+  /** The key this atom appeared under in `jotai`. */
   atomName: string;
   /**
    * When the inspector subscribed. Stands in for a row timestamp in the one case an

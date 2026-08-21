@@ -83,7 +83,7 @@ class BesouroController {
   private options: BesouroOptions = {};
   /**
    * Installers for the dependency-required inspectors, keyed by inspector so a
-   * repeat `set*` call replaces rather than appends. That matters under Fast
+   * repeat inspector call replaces rather than appends. That matters under Fast
    * Refresh, where the module calling these re-executes against this persisted
    * singleton — appending would accumulate duplicate installs.
    */
@@ -112,7 +112,7 @@ class BesouroController {
    * `@react-native-async-storage/async-storage` (§4.1) — and because there is only
    * ever one instance worth patching: the one the app itself writes through.
    */
-  setAsyncStorageHandler(asyncStorage: AsyncStorageLike): this {
+  asyncStorage(asyncStorage: AsyncStorageLike): this {
     this.injected.set('asyncStorage', () =>
       installAsyncStorageInspector(asyncStorage)
     );
@@ -123,8 +123,8 @@ class BesouroController {
    * Enable the MMKV inspector over the given instances, keyed by the name each
    * appears under in the drawer.
    *
-   * Plural where {@link setAsyncStorageHandler} is singular, and that is the real
-   * difference between the two: AsyncStorage is one module the whole app writes
+   * Takes a map where {@link asyncStorage} takes a single module, and that is the
+   * real difference between the two: AsyncStorage is one module the whole app writes
    * through, while MMKV instances are created by the app — a default one, an
    * encrypted one, one per signed-in user — and an inspector that could only watch
    * "the" instance would watch the wrong one as often as not.
@@ -133,7 +133,7 @@ class BesouroController {
    * reason as Zustand: it keeps the whole devtools graph behind the consumer's
    * dev-only `require` (§11).
    */
-  setMMKVInstances(instances: MMKVInstances): this {
+  mmkv(instances: MMKVInstances): this {
     this.injected.set('mmkv', () => installMMKVInspector(instances));
     return this;
   }
@@ -147,7 +147,7 @@ class BesouroController {
    * watched. Declaring them here rather than exporting a per-store `attach()` keeps
    * the whole devtools graph behind the consumer's dev-only `require` (§11).
    */
-  setZustandStores(stores: ZustandStores): this {
+  zustand(stores: ZustandStores): this {
     this.injected.set('zustand', () => installZustandInspector(stores));
     return this;
   }
@@ -167,7 +167,7 @@ class BesouroController {
    * server patterns. Calling this twice therefore *replaces* rather than adds —
    * which is also what keeps Fast Refresh from installing capture twice over.
    */
-  setReduxStore<State>(
+  redux<State>(
     store: ReduxStoreLike<State>,
     rootReducer: ReduxReducerLike<State>
   ): this {
@@ -189,7 +189,7 @@ class BesouroController {
    * The store comes too because that is what actually holds the values:
    * `getDefaultStore()` for an app with no `Provider`, or the store passed to one.
    */
-  setJotaiAtoms(store: JotaiStoreLike, atoms: JotaiAtoms): this {
+  jotai(store: JotaiStoreLike, atoms: JotaiAtoms): this {
     this.injected.set('jotai', () => installJotaiInspector({ store, atoms }));
     return this;
   }
@@ -203,7 +203,7 @@ class BesouroController {
    * those created after install, so call `init()` from a devtools module that is
    * required before feature code.
    */
-  setSocketIOManager(Manager: SocketIOManagerLike): this {
+  socketIO(Manager: SocketIOManagerLike): this {
     this.injected.set('socketio', () => installSocketIOInspector({ Manager }));
     return this;
   }
@@ -217,7 +217,7 @@ class BesouroController {
    * reports "a message arrived" and notifee "it was displayed", so the rows are
    * complementary.
    */
-  setNotificationsHandlers(handlers: NotificationsInspectorPeers): this {
+  notifications(handlers: NotificationsInspectorPeers): this {
     this.injected.set('notifications', () =>
       installNotificationsInspector(handlers)
     );
@@ -242,7 +242,7 @@ class BesouroController {
    * Every enabled inspector paired with its installer, in {@link INSPECTOR_ORDER}.
    *
    * An inspector is enabled when it is self-sufficient and not switched off, or
-   * when a `set*` method supplied its dependency. The two cannot both apply — the
+   * when an inspector method supplied its dependency. The two cannot both apply — the
    * tables are disjoint — so there is no precedence rule to remember.
    */
   private resolveInspectors(): Array<[Inspector, Installer]> {

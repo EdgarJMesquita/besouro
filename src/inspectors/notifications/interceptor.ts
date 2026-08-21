@@ -15,7 +15,7 @@
  * "here is what was shown and how the user reacted" (press / action / dismiss).
  *
  * `installNotificationsInspector` is the entry point, called by the controller when
- * the consumer supplies the modules via `setNotificationsHandlers`.
+ * the consumer supplies the modules via `notifications`.
  */
 
 import { AppState } from 'react-native';

@@ -1,7 +1,7 @@
 /**
  * A small RTK store for exercising the Redux inspector.
  *
- * `rootReducer` is exported separately from `store` on purpose: `setReduxStore`
+ * `rootReducer` is exported separately from `store` on purpose: `redux`
  * needs it, because capture wraps the reducer and Redux has no way to hand one
  * back off a store. Naming it here instead of inlining
  * `configureStore({ reducer: { … } })` is the whole call-site cost of the inspector.

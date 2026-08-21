@@ -81,7 +81,7 @@ export default function App() {
   // Deliberately *without* an instance argument, which is the case worth
   // exercising: the hook then writes through react-native-mmkv's own default
   // instance — a different JS object from the `storage` we registered with
-  // `setMMKVInstances`, backed by the same store. On v4 the change notification
+  // `mmkv`, backed by the same store. On v4 the change notification
   // is a process-wide registry keyed by the store's id, so the inspector's
   // listener on `storage` still sees the write and logs it under `default`
   // (as an inferred `set`/`remove`, since a listener is handed only a key).
@@ -135,7 +135,7 @@ export default function App() {
     // (skips the XHR-polling handshake). attachSocketIO must run before emit so
     // outgoing frames are captured.
     if (!socketioRef.current) {
-      // No attach call needed — setSocketIOManager(Manager) already patched the
+      // No attach call needed — socketIO(Manager) already patched the
       // factory, so this socket is captured the moment io() creates it.
       const socket = io(SOCKETIO_URL, { transports: ['websocket'] });
       socketioRef.current = socket;

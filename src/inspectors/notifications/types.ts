@@ -4,7 +4,7 @@
  * Structural stand-ins for the peer modules the inspector wraps (expo-notifications,
  * @react-native-firebase/messaging, @notifee/react-native). They exist so the library
  * never imports (or bundles) any of them — §4.1: a consumer passes their real modules
- * to `setNotificationsHandlers` and structural typing does the rest.
+ * to `notifications` and structural typing does the rest.
  */
 
 interface PeerSubscription {
