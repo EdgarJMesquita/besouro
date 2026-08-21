@@ -829,12 +829,6 @@ the underlying async call took), error, timestamp.
   **clear all** (behind a confirm).
 - Filter by key/operation; clear log.
 
-> **Recursion guard:** the interceptor **ignores the library's own key namespace**
-> (the `@rn-inapp-devtools/*` prefix used by the persistence adapter, §9) so our own
-> log writes never surface as events or feed back into the store. The persistence
-> adapter also retains references to the **original, unwrapped** methods, so enabling
-> this inspector and using AsyncStorage as the persistence backend never collide.
-
 ### 6.8 Zustand Inspector
 
 > **Why a separate inspector (not the AsyncStorage one)?** AsyncStorage is persistent

@@ -6,7 +6,7 @@
  * in by the consumer (Metro cannot safely auto-require an optional peer — §4.1).
  *
  * `installAsyncStorageInspector` is the entry point, called by the controller when
- * the consumer supplies the module via `setAsyncStorageHandler`.
+ * the consumer supplies the module via `asyncStorage`.
  */
 
 import { patchMethod, safeCapture } from '../../core/base-interceptor';
@@ -23,9 +23,6 @@ import type { AsyncStorageLike } from './types';
 
 /** Per-entry ceiling for a captured value — 500 KB. */
 const MAX_VALUE_BYTES = 500_000;
-
-/** Keys under this prefix (the library's own persistence) are never recorded. */
-const RESERVED_KEY_PREFIX = '@rn-inapp-devtools/';
 
 export function installAsyncStorageInspector(
   asyncStorage: AsyncStorageLike
@@ -158,9 +155,8 @@ export function installAsyncStorageInspector(
 }
 
 /**
- * Time an AsyncStorage call and record an event on completion. Skips the library's
- * own reserved keys entirely (no timing, no recursion). Always delegates to the
- * underlying call and preserves its resolve/reject.
+ * Time an AsyncStorage call and record an event on completion. Always delegates to
+ * the underlying call and preserves its resolve/reject.
  */
 function track<Result>(
   operation: StorageOperation,
@@ -169,9 +165,6 @@ function track<Result>(
   resolveValue: (result: Result) => string | undefined,
   call: () => Promise<Result>
 ): Promise<Result> {
-  if (keys.length > 0 && keys.every(isReservedKey)) {
-    return call();
-  }
   const startTime = Date.now();
   return call().then(
     (result) => {
@@ -200,10 +193,6 @@ function track<Result>(
       throw error;
     }
   );
-}
-
-function isReservedKey(key: string): boolean {
-  return key.startsWith(RESERVED_KEY_PREFIX);
 }
 
 function errorMessage(error: unknown): string {
