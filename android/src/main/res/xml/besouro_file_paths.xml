@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Roots the share FileProvider may generate content:// URIs for. These mirror
+  exactly the sandbox roots the File System inspector browses (BesouroFileSystemModule):
+  filesDir, cacheDir and getExternalFilesDir(null). Covering the roots only makes
+  a browsable file *eligible* to share; each share still grants read access to a
+  single file's URI, never the directory.
+-->
+<paths>
+    <files-path name="internal_files" path="." />
+    <cache-path name="internal_cache" path="." />
+    <external-files-path name="external_files" path="." />
+</paths>

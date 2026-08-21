@@ -1,0 +1,44 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Lets the share action see which apps can receive an ACTION_SEND, so it can
+      grant each of them read access to the shared file's URI before handing over
+      (see grantReadToShareTargets). On targetSdk >= 30, package-visibility
+      filtering would otherwise make queryIntentActivities return nothing and the
+      grants would be silently skipped — the share sheet still lists the apps
+      (it's exempt), but receivers reading the file after their first activity
+      finishes, like WhatsApp and Slack, fail.
+
+      This is an intent-filter query, not QUERY_ALL_PACKAGES, so it carries no
+      Play policy implication. It merges into the host app's manifest the same
+      way the provider below does.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+    </queries>
+
+    <application>
+        <!--
+          Private FileProvider used only by the File System inspector's "Share"
+          action to hand a single sandbox file to another app. The authority is
+          namespaced with ${applicationId} so it can't collide with a
+          FileProvider the host app already declares, and this whole element is
+          folded into the app's merged manifest automatically — the app
+          developer adds nothing. exported=false + grantUriPermissions means the
+          receiver only ever gets the one-shot read grant we attach per share.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.besouro.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/besouro_file_paths" />
+        </provider>
+    </application>
+
+</manifest>
