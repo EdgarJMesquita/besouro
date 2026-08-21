@@ -56,7 +56,7 @@ import {
   type DatabaseStatus,
 } from '../core/database/status';
 import { DatabaseNotice } from './DatabaseNotice';
-import { getSettings, updateSettings } from '../core/settings-store';
+import { getPersisted, setPersisted } from '../core/persisted-state';
 import { useMiniWindowGestures } from './hooks/mini-window-gestures';
 import {
   animateFrameTo,
@@ -76,6 +76,16 @@ const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.9, 520);
 
 /** How long the dim takes to arrive once the drawer has finished growing. */
 const DIM_FADE_DURATION = 160;
+
+/**
+ * Whether the drawer was last left minimized. Restored on the next *open*, not on
+ * launch — the drawer only exists once the bubble is tapped — so this says "open
+ * it the way I left it" rather than putting a panel on screen unasked.
+ *
+ * A view-state preference beside the panel's shape (`mini-window.ts`), not a
+ * setting: the Settings panel never writes it and nothing native reads it.
+ */
+const MINIMIZED_KEY = 'drawer.minimized';
 
 /** How long the floating panel takes to fade in when the drawer opens minimized. */
 const PANEL_ENTER_DURATION = 140;
@@ -114,10 +124,10 @@ export function BesouroShell({
     null
   );
   // Opens the way it was left: the mode is remembered across reloads and
-  // relaunches, like the panel's shape. Read once — later settings changes are
-  // this component writing its own state back.
-  const [minimized, setMinimized] = useState(
-    () => getSettings().drawerMinimized
+  // relaunches, like the panel's shape. Read once — later changes to the
+  // preference are this component writing its own state back.
+  const [minimized, setMinimized] = useState(() =>
+    getPersisted(MINIMIZED_KEY, false)
   );
   const miniWindow = useMiniWindowGestures();
 
@@ -253,7 +263,7 @@ export function BesouroShell({
   // swap to hide, which is what used to make the growing half stutter.
   const minimize = useCallback((): void => {
     setMinimized(true);
-    updateSettings({ drawerMinimized: true });
+    setPersisted(MINIMIZED_KEY, true);
     // Dropped outright rather than faded: the shrink starts on this same frame,
     // and a dim still on its way out would spend it edged against a surface that
     // no longer fills the screen. Reading it as "the app is back" is also exactly
@@ -265,7 +275,7 @@ export function BesouroShell({
 
   const restore = useCallback((): void => {
     setMinimized(false);
-    updateSettings({ drawerMinimized: false });
+    setPersisted(MINIMIZED_KEY, false);
     animateFrameTo(fullScreenFrame(), () => {
       releaseFrame();
       // Landed: the surface is the whole screen, so the dim can come up without

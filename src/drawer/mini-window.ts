@@ -21,15 +21,47 @@ import {
   getSafeAreaInsetsSnapshot,
   getTopInsetSnapshot,
 } from '../shared/hooks/safe-area';
-import { getSettings, updateSettings } from '../core/settings-store';
+import { readJsonFile, writeJsonFile } from '../core/json-file';
 import {
   clampFrame as clampFrameIn,
   defaultFrame,
   denormalizeFrame,
+  isStoredFrame,
   normalizeFrame,
   type Frame,
   type ScreenBounds,
+  type StoredFrame,
 } from './mini-window-geometry';
+
+/**
+ * The panel's remembered shape gets its own file, beside the bubble's
+ * `bubble-position.json`: one floating thing's geometry per file.
+ *
+ * Kept out of `persisted-state.ts` because this is the noisiest writer we have —
+ * a write on every drag and every resize that ends — and that store rewrites its
+ * whole document each time, which would drag every unrelated view-mode preference
+ * through a gesture that has nothing to do with them.
+ */
+const FRAME_FILE = 'besouro_mini_window.json';
+
+/**
+ * The frame restored from disk: `null` until {@link hydrateMiniWindow} lands, and
+ * after it when nothing was stored. Held here rather than re-read per call so
+ * {@link getPanelFrame} can stay synchronous — it runs while the panel is
+ * mounting, with no frame to wait on.
+ */
+let storedFrame: StoredFrame | null = null;
+
+/**
+ * Read the remembered frame off disk. Called once at install; a panel that opens
+ * before this lands simply starts in its default corner.
+ */
+export async function hydrateMiniWindow(): Promise<void> {
+  const raw = await readJsonFile<StoredFrame>(FRAME_FILE);
+  // Validated here rather than at the call site: this is the only code that
+  // knows the shape, and a hand-edited or half-written file is just "no frame".
+  storedFrame = isStoredFrame(raw) ? raw : null;
+}
 
 export type { Frame } from './mini-window-geometry';
 
@@ -74,9 +106,8 @@ let current: Frame = fullScreenFrame();
 export function getPanelFrame(): Frame {
   const bounds = currentBounds();
   if (!panelFrame) {
-    const stored = getSettings().miniWindow;
-    panelFrame = stored
-      ? denormalizeFrame(stored, bounds)
+    panelFrame = storedFrame
+      ? denormalizeFrame(storedFrame, bounds)
       : defaultFrame(bounds);
   }
   panelFrame = clampFrameIn(panelFrame, bounds);
@@ -86,13 +117,17 @@ export function getPanelFrame(): Frame {
 /**
  * Remember the panel's shape for the next launch.
  *
- * Called when a gesture *ends*, not while it runs: settings are persisted to a
- * file on every change, and a drag would otherwise write it twenty times a
- * second to record positions the finger is still passing through.
+ * Called when a gesture *ends*, not while it runs: this is persisted to a file on
+ * every change, and a drag would otherwise write it twenty times a second to
+ * record positions the finger is still passing through.
  */
 export function savePanelFrame(): void {
   if (!panelFrame) return;
-  updateSettings({ miniWindow: normalizeFrame(panelFrame, currentBounds()) });
+  const next = normalizeFrame(panelFrame, currentBounds());
+  // Kept in step so a later read in this session sees what was written, without
+  // waiting on the file.
+  storedFrame = next;
+  void writeJsonFile(FRAME_FILE, next);
 }
 
 /** Push a frame to the native surface, clamped. Also remembers it as the panel's. */

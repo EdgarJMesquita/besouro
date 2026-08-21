@@ -46,7 +46,8 @@ import { setDatabaseStatus } from './database/status';
 import { startSessionLifecycle } from './session-lifecycle';
 import { ingestPendingCrashes } from './crash-ingest';
 import { hydrateSettings } from './settings-store';
-import { hydrateConfig } from './persisted-state';
+import { hydratePersistedState } from './persisted-state';
+import { hydrateMiniWindow } from '../drawer/mini-window';
 import {
   resolveBubbleColorPairs,
   startBubbleAppearanceSync,
@@ -306,7 +307,9 @@ class BesouroController {
     // Restore persisted per-inspector view-mode preferences (network URL mode,
     // file-system list/grid). Async like settings — the drawer usually mounts long
     // after this resolves, and a live UI re-reads when hydration notifies.
-    hydrateConfig();
+    hydratePersistedState();
+    // The floating panel's frame, which keeps its own file (see `mini-window.ts`).
+    hydrateMiniWindow();
     startBubbleAppearanceSync(this.options);
   }
 

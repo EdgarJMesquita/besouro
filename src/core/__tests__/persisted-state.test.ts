@@ -20,17 +20,17 @@ describe('persisted-state', () => {
 
   it('returns the fallback for an unset key', () => {
     mockNative(null);
-    const { getConfig } = loadStore();
-    expect(getConfig('missing', 'fallback')).toBe('fallback');
+    const { getPersisted } = loadStore();
+    expect(getPersisted('missing', 'fallback')).toBe('fallback');
   });
 
   it('no-ops without a native module (no throw on set/hydrate)', async () => {
     mockNative(null);
-    const { getConfig, setConfig, hydrateConfig } = loadStore();
-    await expect(hydrateConfig()).resolves.toBeUndefined();
-    expect(() => setConfig('k', 'v')).not.toThrow();
+    const { getPersisted, setPersisted, hydratePersistedState } = loadStore();
+    await expect(hydratePersistedState()).resolves.toBeUndefined();
+    expect(() => setPersisted('k', 'v')).not.toThrow();
     // Value is still held in memory even though it can't be written.
-    expect(getConfig('k', 'fallback')).toBe('v');
+    expect(getPersisted('k', 'fallback')).toBe('v');
   });
 
   it('persists a set value to the native file', async () => {
@@ -38,9 +38,9 @@ describe('persisted-state', () => {
       .fn<(name: string, content: string) => Promise<void>>()
       .mockResolvedValue(undefined);
     mockNative({ readFile: jest.fn(), writeFile });
-    const { setConfig } = loadStore();
+    const { setPersisted } = loadStore();
 
-    setConfig('network.urlMode', 'first');
+    setPersisted('network.urlMode', 'first');
     await Promise.resolve();
 
     expect(writeFile).toHaveBeenCalledTimes(1);
@@ -53,10 +53,10 @@ describe('persisted-state', () => {
       .fn<(name: string, content: string) => Promise<void>>()
       .mockResolvedValue(undefined);
     mockNative({ readFile: jest.fn(), writeFile });
-    const { setConfig } = loadStore();
+    const { setPersisted } = loadStore();
 
-    setConfig('k', 'v');
-    setConfig('k', 'v');
+    setPersisted('k', 'v');
+    setPersisted('k', 'v');
     await Promise.resolve();
 
     expect(writeFile).toHaveBeenCalledTimes(1);
@@ -67,11 +67,11 @@ describe('persisted-state', () => {
       .fn<(name: string) => Promise<string | null>>()
       .mockResolvedValue('{"fileSystem.viewMode":"grid"}');
     mockNative({ readFile, writeFile: jest.fn() });
-    const { getConfig, hydrateConfig } = loadStore();
+    const { getPersisted, hydratePersistedState } = loadStore();
 
-    expect(getConfig('fileSystem.viewMode', 'list')).toBe('list');
-    await hydrateConfig();
-    expect(getConfig('fileSystem.viewMode', 'list')).toBe('grid');
+    expect(getPersisted('fileSystem.viewMode', 'list')).toBe('list');
+    await hydratePersistedState();
+    expect(getPersisted('fileSystem.viewMode', 'list')).toBe('grid');
   });
 
   it('keeps defaults when the file is missing or corrupt', async () => {
@@ -79,9 +79,9 @@ describe('persisted-state', () => {
       .fn<(name: string) => Promise<string | null>>()
       .mockResolvedValue('not json');
     mockNative({ readFile, writeFile: jest.fn() });
-    const { getConfig, hydrateConfig } = loadStore();
+    const { getPersisted, hydratePersistedState } = loadStore();
 
-    await hydrateConfig();
-    expect(getConfig('fileSystem.viewMode', 'list')).toBe('list');
+    await hydratePersistedState();
+    expect(getPersisted('fileSystem.viewMode', 'list')).toBe('list');
   });
 });
