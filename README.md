@@ -285,7 +285,7 @@ Besouro.configure({
 | `maxSessions` | `10`        | Sessions kept on disk; older ones pruned at launch                      |
 | `theme`       | `'system'`  | `'system' \| 'light' \| 'dark'`                                         |
 | `accent`      | theme's own | `'#rrggbb'`                                                             |
-| `locale`      | `'system'`  | `'en' \| 'pt' \| 'es'`                                                  |
+| `locale`      | `'system'`  | `'system' \| 'en' \| 'pt' \| 'es'`                                      |
 | `inspectors`  | all on      | Switch off `network`, `console`, `websocket`, `element` or `fileSystem` |
 
 ## Session history
