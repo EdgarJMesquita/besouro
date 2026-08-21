@@ -6,7 +6,7 @@
  *
  * - the drawer's geometry, and — through {@link useDrawerSlide} — its slide, the
  *   dimmed backdrop that fades with it, and the swipe that closes it
- * - the header: session history, settings, close
+ * - the header: minimize, session history, settings, close
  * - the **back stack** — it creates the `detailNav` controller that every stacked
  *   drawer and every detail view registers with, and owns the Android
  *   `BackHandler` that unwinds it one level at a time
@@ -442,17 +442,6 @@ export function BesouroShell({
             </Pressable>
           ) : (
             <>
-              {sessionRepository ? (
-                <Pressable
-                  onPress={() => setHistoryOpen(true)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={strings.sessionHistory}
-                  style={styles.block2}
-                >
-                  <Icon name="history" size={20} color={theme.text} />
-                </Pressable>
-              ) : null}
               <Pressable
                 onPress={minimize}
                 disabled={stackedPanelOpen}
@@ -463,6 +452,17 @@ export function BesouroShell({
               >
                 <Icon name="minimize" size={20} color={theme.text} />
               </Pressable>
+              {sessionRepository ? (
+                <Pressable
+                  onPress={() => setHistoryOpen(true)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.sessionHistory}
+                  style={styles.block}
+                >
+                  <Icon name="history" size={20} color={theme.text} />
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={() => setSettingsOpen(true)}
                 hitSlop={10}
@@ -617,9 +617,6 @@ function SlideOverlay({
 
 const styles = StyleSheet.create({
   block: {
-    marginRight: 18,
-  },
-  block2: {
     marginRight: 18,
   },
   row: {
