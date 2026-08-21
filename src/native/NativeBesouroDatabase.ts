@@ -10,11 +10,8 @@ import { TurboModuleRegistry, type TurboModule } from 'react-native';
  * Backed by the SQLite each platform already ships — `libsqlite3` on iOS,
  * `Context.openOrCreateDatabase` on Android — so there is no dependency to add and
  * nothing for a consumer to link. The database lives in app-private storage, in
- * each platform's conventional place for one:
- *   Android: <databases>/rn-inapp-devtools-events.db
- *   iOS:     Library/Application Support/RNBesouro/events.db
- *            (excluded from iCloud/iTunes backup — captured logs are disposable
- *            and can grow large)
+ * each platform's conventional place for one — see the native implementations for
+ * the exact path.
  *
  * The API is deliberately a thin, generic SQL port rather than an event-shaped one:
  * the schema, the queries and the row mapping all live in JS

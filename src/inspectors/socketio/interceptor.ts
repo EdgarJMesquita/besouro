@@ -47,8 +47,8 @@ const LIFECYCLE_EVENTS = [
 
 // Marks a patched `Manager.prototype` so repeated installs / hot reloads don't
 // stack wrappers, and a patched socket so auto + manual attach never double-log.
-const MANAGER_PATCHED = '__inappDevtoolsManagerPatched';
-const SOCKET_PATCHED = '__inappDevtoolsSocketPatched';
+const MANAGER_PATCHED = '__besouroManagerPatched';
+const SOCKET_PATCHED = '__besouroSocketPatched';
 
 export function installSocketIOInspector(
   options: SocketIOInspectorOptions

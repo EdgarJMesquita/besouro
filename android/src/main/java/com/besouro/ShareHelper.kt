@@ -149,7 +149,7 @@ internal class ShareHelper(private val reactContext: ReactApplicationContext) {
 
     companion object {
         /** Cache subdirectory holding the temporary copy behind [shareBase64File]. */
-        private const val SHARE_DIR = "rn-inapp-devtools-share"
+        private const val SHARE_DIR = "besouro-share"
         private const val LOG_TAG = "Besouro"
     }
 }

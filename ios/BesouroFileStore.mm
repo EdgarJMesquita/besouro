@@ -2,7 +2,7 @@
 
 static NSString *const kStorageDir   = @"RNBesouro";
 // JS-owned settings file; see +readBubbleAppearance.
-static NSString *const kSettingsFile  = @"rn-inapp-devtools_settings.json";
+static NSString *const kSettingsFile  = @"besouro_settings.json";
 
 @implementation BesouroFileStore
 

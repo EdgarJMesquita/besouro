@@ -66,7 +66,7 @@ const DEFAULTS: BesouroSettings = {
   drawerMinimized: false,
 };
 
-const SETTINGS_FILE = 'rn-inapp-devtools_settings.json';
+const SETTINGS_FILE = 'besouro_settings.json';
 
 let settings: BesouroSettings = DEFAULTS;
 const listeners = new Set<() => void>();

@@ -6,7 +6,7 @@ import java.io.File
 
 /**
  * The library's own directory in the app's internal storage
- * (`<filesDir>/rn-inapp-devtools/`), holding everything it keeps on disk: the
+ * (`<filesDir>/besouro/`), holding everything it keeps on disk: the
  * JS-side settings files behind `readFile`/`writeFile`/`deleteFile`, and the
  * persisted bubble position.
  *
@@ -98,8 +98,8 @@ internal class FileStore(private val context: Context) : BubbleStore {
     }
 
     companion object {
-        private const val STORAGE_DIR = "rn-inapp-devtools"
+        private const val STORAGE_DIR = "besouro"
         private const val BUBBLE_POSITION_FILE = "bubble-position.json"
-        private const val SETTINGS_FILE = "rn-inapp-devtools_settings.json"
+        private const val SETTINGS_FILE = "besouro_settings.json"
     }
 }

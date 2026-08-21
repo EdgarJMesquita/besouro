@@ -148,7 +148,7 @@ export interface Spec extends TurboModule {
 
   // ── Native filesystem persistence ────────────────────────────────────────
   // Files live in the app's internal storage (no permissions needed).
-  // Android: <filesDir>/rn-inapp-devtools/
+  // Android: <filesDir>/besouro/
   // iOS:     Library/Application Support/RNBesouro/
 
   readFile(filename: string): Promise<string | null>;
