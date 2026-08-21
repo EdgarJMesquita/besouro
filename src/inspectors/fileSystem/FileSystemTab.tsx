@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePersistedState } from '../../core/persisted-state';
 import { useEphemeralState } from '../../core/ephemeral-state';
+import { hapticTap } from '../../core/haptics';
 import {
   ActivityIndicator,
   FlatList,
@@ -161,6 +162,13 @@ export function FileSystemTab(): React.ReactNode {
       // folder's path.
       if (currentPathRef.current === path) {
         setEntries(sortEntries(resolved));
+        // Usually the only acknowledgement a refresh gets. The spinner is the
+        // visible half, and a native listing resolves fast enough that it can
+        // come and go inside a frame — leaving a re-read that found nothing
+        // changed indistinguishable from a tap that missed. Fired on the listing
+        // that landed, like {@link CopyButton}'s: a read whose result was thrown
+        // away because the directory moved has refreshed nothing to feel.
+        hapticTap();
       }
     } finally {
       setRefreshing(false);
