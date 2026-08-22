@@ -334,20 +334,9 @@ headers, tokens, cookies, whatever the app logged. Session history keeps it acro
 launches. Fine on your own device; treat any build that ships Besouro as internal
 only, and don't hand one to anyone you wouldn't hand the data to.
 
-## Example app
-
-Every inspector wired up, with a button each to make it produce data. See
-[`example/src/tools/besouro.ts`](example/src/tools/besouro.ts).
-
-```sh
-git clone https://github.com/EdgarJMesquita/besouro
-cd besouro && yarn
-yarn example ios          # or: yarn example android
-```
 
 ## Contributing
 
-- [Design spec](docs/SPEC.md) — architecture, API, and every inspector in detail
 - [Development workflow](CONTRIBUTING.md#development-workflow)
 - [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
 - [Code of conduct](CODE_OF_CONDUCT.md)
