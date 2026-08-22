@@ -327,9 +327,6 @@ if (__DEV__ || process.env.EXPO_PUBLIC_BESOURO === '1') {
 The flag has to be build-time, not runtime: an env var your bundler inlines, or a
 constant a build script swaps. A runtime check keeps the library in every bundle.
 
-Move besouro to `dependencies` for that flavor: production installs skip dev
-dependencies.
-
 ## Security
 
 Everything captured is stored raw in the app's sandbox: request and response bodies,
