@@ -82,7 +82,7 @@ export type FirebaseMessagingLike = () => FirebaseMessaging;
 // ── @notifee/react-native ─────────────────────────────────────────────────────
 
 export interface NotifeeNotification {
-  /** notifee's own notification id — surfaced as `messageId`. */
+  /** notifee's own notification id — captured as `notificationId`, shown as `id`. */
   id?: string;
   title?: string;
   body?: string;

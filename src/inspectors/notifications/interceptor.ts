@@ -180,7 +180,7 @@ function recordExpo(
     title: content?.title ?? undefined,
     body: content?.body ?? undefined,
     data: toDataString(content?.data),
-    messageId: notification?.request?.identifier,
+    notificationId: notification?.request?.identifier,
   });
 }
 
@@ -208,7 +208,7 @@ function patchExpoOutgoing(
             title: request?.content?.title ?? undefined,
             body: request?.content?.body ?? undefined,
             data: toDataString(request?.content?.data),
-            messageId: request?.identifier,
+            notificationId: request?.identifier,
           })
         );
         return call(...args);
@@ -364,7 +364,7 @@ function recordFirebase(
     title: message?.notification?.title,
     body: message?.notification?.body,
     data: toDataString(message?.data),
-    messageId: message?.messageId,
+    notificationId: message?.messageId,
   });
 }
 
@@ -436,7 +436,7 @@ function recordNotifee(raw: unknown, foreground: boolean): void {
     title: notification?.title,
     body: notification?.body,
     data: toDataString(notification?.data),
-    messageId: notification?.id,
+    notificationId: notification?.id,
   });
 }
 
@@ -462,7 +462,7 @@ function patchNotifeeOutgoing(
             title: notification?.title,
             body: notification?.body,
             data: toDataString(notification?.data),
-            messageId: notification?.id,
+            notificationId: notification?.id,
           })
         );
         return call(...args);
@@ -487,7 +487,7 @@ interface RecordInput {
   title?: string;
   body?: string;
   data?: CapturedData;
-  messageId?: string;
+  notificationId?: string;
 }
 
 function record(input: RecordInput): void {

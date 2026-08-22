@@ -22,6 +22,7 @@ import { layout } from '../../shared/styles';
 import { StyleSheet } from 'react-native';
 
 import { useEventWithDetail } from '../../shared/hooks/event-detail';
+import { notificationIdKey } from './utils/notification-id-key';
 
 type DetailTab = 'formatted' | 'raw';
 
@@ -99,8 +100,12 @@ function FormattedBody({
         value={new Date(event.timestamp).toUTCString()}
         copyable={true}
       />
-      {event.messageId ? (
-        <KeyValueRow label="messageId" value={event.messageId} copyable />
+      {event.notificationId ? (
+        <KeyValueRow
+          label={notificationIdKey(event.provider)}
+          value={event.notificationId}
+          copyable
+        />
       ) : null}
     </>
   );
@@ -140,33 +145,40 @@ function FormattedBody({
 }
 
 /**
- * DevTools-added fields that aren't part of the notification the provider delivered:
- * store bookkeeping (`id`/`sessionId`/`kind`) plus values we derive at capture time
- * (`provider` = which module observed it, `phase` = which listener fired, `origin` =
- * computed from the trigger, `foreground` = read from AppState, `timestamp` =
- * `Date.now()` when our listener fired, not the provider's own send time). All are
- * surfaced in the Formatted tab instead — raw shows only the delivered payload.
+ * The Raw tab shows what the provider delivered, under the provider's own key names
+ * (`identifier` / `messageId` / `id`, see {@link notificationIdKey}) — a log that renames
+ * what it logged sends the reader looking for a key their code never used.
+ *
+ * Built by allowlist rather than by deleting DevTools fields from the event: a
+ * denylist silently leaks every field later added to `NotificationEvent`, which is
+ * how `dataTruncated` — our byte-cap flag, not something a provider sent — ended up
+ * being shown here as part of the payload.
+ *
+ * The rest belongs to the Formatted tab: `id`/`sessionId`/`kind` store bookkeeping,
+ * plus what we derive at capture time (`provider` = which module observed it,
+ * `phase` = which listener fired, `origin` = computed from the trigger,
+ * `foreground` = read from AppState, `timestamp` = `Date.now()` when our listener
+ * fired, not the provider's own send time).
  */
-const INTERNAL_FIELDS: readonly (keyof NotificationEvent)[] = [
-  'id',
-  'sessionId',
-  'kind',
-  'provider',
-  'phase',
-  'origin',
-  'foreground',
-  'timestamp',
-];
-
 function RawBody({ event }: { event: NotificationEvent }): React.ReactNode {
   const raw = useMemo(() => {
-    const payload: Record<string, unknown> = { ...event };
-    for (const field of INTERNAL_FIELDS) {
-      delete payload[field];
+    const payload: Record<string, unknown> = {};
+    if (event.notificationId !== undefined) {
+      payload[notificationIdKey(event.provider)] = event.notificationId;
+    }
+    if (event.title !== undefined) {
+      payload.title = event.title;
+    }
+    if (event.body !== undefined) {
+      payload.body = event.body;
+    }
+    if (event.data !== undefined) {
+      payload.data = event.data;
     }
     return JSON.stringify(payload, null, 2);
   }, [event]);
-  return <JsonViewer raw={raw} />;
+  // The cap is ours, so it is viewer chrome (a banner), never a payload key.
+  return <JsonViewer raw={raw} truncated={event.dataTruncated} />;
 }
 
 /** Title-cases a raw detail-tab name ('formatted' -> 'Formatted') for display. */

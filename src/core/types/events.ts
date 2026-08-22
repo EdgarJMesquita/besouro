@@ -135,8 +135,12 @@ export interface NotificationEvent extends BaseEvent {
   /** Whether capture cut `data`. */
   dataTruncated: boolean;
   foreground: boolean;
-  /** Provider message ID (e.g. FCM `messageId`), when present. */
-  messageId?: string;
+  /**
+   * The id the provider gave this notification, when present. Each provider names
+   * it differently — expo `request.identifier`, firebase `messageId`, notifee `id` —
+   * so it is displayed back under that provider's own key, never a normalized one.
+   */
+  notificationId?: string;
 }
 
 export type StorageOperation =
