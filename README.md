@@ -1,5 +1,9 @@
 # Besouro
 
+[![npm version](https://img.shields.io/npm/v/besouro.svg)](https://www.npmjs.com/package/besouro)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![platforms](https://img.shields.io/badge/platforms-ios%20%7C%20android-lightgrey.svg)](#requirements)
+
 On-device developer tools for React Native and Expo. Tap the floating bubble, get
 twelve inspectors. No laptop, no remote debugger.
 
@@ -21,15 +25,8 @@ twelve inspectors. No laptop, no remote debugger.
 ## Installation
 
 ```sh
-npm install --save-dev besouro
-# or
-yarn add --dev besouro
+npm install besouro
 ```
-
-In most cases you want it as a dev dependency, with the require gated behind
-`__DEV__` (see [Quick start](#quick-start)). But Besouro is also great for debugging
-release builds and QA versions. See
-[Shipping a release build with Besouro](#shipping-a-release-build-with-besouro).
 
 It ships a native module, so rebuild:
 
@@ -60,6 +57,9 @@ if (__DEV__) {
 
 Import it as early as possible. Anything that runs first is not captured: a socket
 opened at module load, a fetch fired before the app renders.
+
+Want to enable Besouro in QA or release builds? See
+[Shipping a release build with Besouro](#shipping-a-release-build-with-besouro).
 
 ## Enabled by default
 
@@ -281,7 +281,7 @@ Besouro.configure({
 }).init();
 ```
 
-| Option        | Default     |                                                                         |
+| Option        | Default     | Notes                                                                   |
 | ------------- | ----------- | ----------------------------------------------------------------------- |
 | `maxSessions` | `10`        | Sessions kept on disk; older ones pruned at launch                      |
 | `theme`       | `'system'`  | `'system' \| 'light' \| 'dark'`                                         |
