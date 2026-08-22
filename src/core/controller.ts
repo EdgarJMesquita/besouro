@@ -55,6 +55,7 @@ import {
 import { BESOURO_REGISTRY_KEY } from './besouro-registry-key';
 import NativeBesouro from '../native/NativeBesouro';
 import { isWarmReload } from './warm-reload';
+import { warn } from './warn';
 
 /** What an inspector's `install()` returns: its own uninstall. */
 type Installer = () => () => void;
@@ -317,12 +318,24 @@ class BesouroController {
    * Register the drawer JS component and ask the native module to mount a
    * draggable bubble on the DecorView (Android) / UIWindow (iOS). Tapping the
    * bubble creates a `RNBesouro` ReactSurface on demand, so the whole
-   * Besouro UI is native-injected — no user JSX required. Silently skips
-   * when the native module is not linked (no bubble in that case).
+   * Besouro UI is native-injected — no user JSX required. Skips when the native
+   * module is not linked (no bubble in that case), warning to the console so the
+   * missing rebuild is diagnosable — see `core/warn`.
    */
   private mountUI(): void {
     if (!NativeBesouro) {
-      // Not linked — nothing to mount (native module required).
+      // Not linked — nothing to mount (native module required). Say so: the JS
+      // half installs from npm alone, the native half only exists after a
+      // rebuild, and the gap between the two is silent otherwise. Not
+      // `__DEV__`-gated, unlike inspector degradation: without the native module
+      // there is no bubble and no drawer, which is just as broken in a build
+      // that ships the devtools deliberately (SPEC §11).
+      warn(
+        'native module not found — besouro is installed in JS but its native ' +
+          'module is not compiled into this build. Rebuild the app ' +
+          '(`npx expo run:ios` / `run:android`, or `pod install` + ' +
+          '`npx react-native run-ios`).'
+      );
       return;
     }
     try {
@@ -363,8 +376,13 @@ class BesouroController {
         refreshSafeAreaInsets?: () => void;
       };
       safeArea.refreshSafeAreaInsets?.();
-    } catch {
-      // Guard against any unexpected error during linking/require.
+    } catch (error) {
+      // Guard against any unexpected error during linking/require — the host app
+      // keeps running either way. Still reported: everything above is our own
+      // code, so a throw here is a besouro bug, and swallowing it silently left
+      // the same symptom as an unlinked module (no bubble, no explanation).
+      const message = error instanceof Error ? error.message : String(error);
+      warn(`failed to mount the UI: ${message}`);
     }
   }
 

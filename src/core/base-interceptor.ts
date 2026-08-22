@@ -6,6 +6,7 @@
 
 import type { Inspector } from './types';
 import { setInspectorStatus } from './status';
+import { warn } from './warn';
 
 const PATCHED = Symbol.for('besouro.patched');
 
@@ -74,17 +75,20 @@ export function guardInstall(
   }
 }
 
-/** Surface why an inspector degraded (dev only) — silent failures are hard to debug. */
+/**
+ * Surface why an inspector degraded (dev only) — silent failures are hard to debug.
+ *
+ * Dev-gated where the unlinked-native-module warning (`core/controller`) is not:
+ * a degraded inspector leaves the rest of the tool working, so in a build that
+ * deliberately ships the devtools this is noise the host app's users would see.
+ */
 function warnDegraded(inspector: Inspector, error: unknown): void {
   const isDev = (globalThis as { __DEV__?: boolean }).__DEV__ !== false;
   if (!isDev) {
     return;
   }
   const message = error instanceof Error ? error.message : String(error);
-  const warn = (
-    globalThis as { console?: { warn?: (...args: unknown[]) => void } }
-  ).console?.warn;
-  warn?.(`[besouro] "${inspector}" inspector degraded: ${message}`);
+  warn(`"${inspector}" inspector degraded: ${message}`);
 }
 
 /**
