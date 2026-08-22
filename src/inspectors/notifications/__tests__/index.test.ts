@@ -191,7 +191,7 @@ describe('installNotificationsInspector (expo)', () => {
       origin: 'local',
       foreground: true,
       title: 'Hello',
-      messageId: 'id-Hello',
+      notificationId: 'id-Hello',
     });
     uninstall();
   });
@@ -319,7 +319,7 @@ describe('installNotificationsInspector (firebase)', () => {
       provider: 'firebase',
       phase: 'received',
       origin: 'remote',
-      messageId: 'msg-1',
+      notificationId: 'msg-1',
       title: 'FCM',
     });
     uninstall();
@@ -365,7 +365,7 @@ describe('installNotificationsInspector (notifee)', () => {
         origin: e.origin,
         foreground: e.foreground,
         title: e.title,
-        messageId: e.messageId,
+        notificationId: e.notificationId,
       }))
     ).toEqual([
       {
@@ -374,7 +374,7 @@ describe('installNotificationsInspector (notifee)', () => {
         origin: 'local',
         foreground: true,
         title: 'Swiped',
-        messageId: 'n-Swiped',
+        notificationId: 'n-Swiped',
       },
       {
         provider: 'notifee',
@@ -382,7 +382,7 @@ describe('installNotificationsInspector (notifee)', () => {
         origin: 'local',
         foreground: true,
         title: 'Acted',
-        messageId: 'n-Acted',
+        notificationId: 'n-Acted',
       },
       {
         provider: 'notifee',
@@ -390,7 +390,7 @@ describe('installNotificationsInspector (notifee)', () => {
         origin: 'local',
         foreground: true,
         title: 'Tapped',
-        messageId: 'n-Tapped',
+        notificationId: 'n-Tapped',
       },
       {
         provider: 'notifee',
@@ -398,7 +398,7 @@ describe('installNotificationsInspector (notifee)', () => {
         origin: 'local',
         foreground: true,
         title: 'Shown',
-        messageId: 'n-Shown',
+        notificationId: 'n-Shown',
       },
     ]);
     uninstall();
@@ -432,7 +432,7 @@ describe('installNotificationsInspector (notifee)', () => {
       phase: 'scheduled',
       origin: 'local',
       title: 'Outgoing',
-      messageId: 'n-Outgoing',
+      notificationId: 'n-Outgoing',
     });
     uninstall();
   });

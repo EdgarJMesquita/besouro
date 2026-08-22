@@ -32,3 +32,13 @@ export const Dimensions = {
 export const PixelRatio = {
   roundToNearestPixel: (value: number) => Math.round(value * 2) / 2,
 };
+
+/**
+ * Enough of the registry for the controller's mount path, which registers the
+ * drawer's root component before asking native for a bubble. Registration is a
+ * no-op here — nothing in a node environment ever runs the surface — but it has
+ * to exist, or the mount throws before reaching the part under test.
+ */
+export const AppRegistry = {
+  registerComponent: (_key: string, _getComponent: () => unknown) => {},
+};

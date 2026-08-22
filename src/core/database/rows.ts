@@ -208,7 +208,7 @@ const notification: TableSpec = {
     { column: 'title', field: 'title', type: 'text', searchable: true },
     { column: 'body', field: 'body', type: 'text', searchable: true },
     { column: 'foreground', field: 'foreground', type: 'bool' },
-    { column: 'message_id', field: 'messageId', type: 'text' },
+    { column: 'notification_id', field: 'notificationId', type: 'text' },
     {
       column: 'data',
       field: 'data',

@@ -203,10 +203,18 @@ internal class DraggableBubbleView(
         val barThickness = maxOf(1.5f, s * 0.07f)
         linePaint.strokeWidth = barThickness
 
-        // Legs — 2 pairs of crossed rotated bars; body drawn on top covers centers
-        val barHalfW = s * 0.38f
-        drawLegPair(canvas, ox + s * 0.5f, oy + s * 0.34f + barThickness / 2f, barHalfW, 18f)
-        drawLegPair(canvas, ox + s * 0.5f, oy + s * 0.52f + barThickness / 2f, barHalfW, 10f)
+        // Legs — three mirrored pairs: the top pair angles up, the middle runs flat
+        // and the bottom angles down. Each leg starts under the body (drawn on top,
+        // so it hides the inner ends) instead of crossing it, which kept the two
+        // sides even.
+        val legCX = ox + s * 0.5f
+        val legInnerDX = s * 0.20f
+        val legOuterDX = s * 0.40f
+        drawLegPair(canvas, legCX, legInnerDX, oy + s * 0.34f, legOuterDX, oy + s * 0.26f)
+        // The middle pair leaves the body at its widest point, so it reaches a
+        // little further out to end up looking the same length as the angled ones.
+        drawLegPair(canvas, legCX, legInnerDX, oy + s * 0.48f, s * 0.43f, oy + s * 0.48f)
+        drawLegPair(canvas, legCX, legInnerDX, oy + s * 0.62f, legOuterDX, oy + s * 0.70f)
 
         // Antennae (thin, angled outward)
         linePaint.strokeWidth = maxOf(1.5f, s * 0.06f)
@@ -214,7 +222,7 @@ internal class DraggableBubbleView(
         drawRotatedSegment(canvas, ox + s * 0.39f, antCY, s * 0.08f,  25f)
         drawRotatedSegment(canvas, ox + s * 0.61f, antCY, s * 0.08f, -25f)
 
-        // Body — capsule, drawn last so it covers the leg crossings
+        // Body — capsule, drawn last so it covers the inner leg ends
         canvas.drawRoundRect(
             ox + s * 0.25f, oy + s * 0.18f,
             ox + s * 0.75f, oy + s * 0.80f,
@@ -223,13 +231,18 @@ internal class DraggableBubbleView(
         )
     }
 
-    private fun drawLegPair(canvas: Canvas, cx: Float, cy: Float, halfW: Float, angle: Float) {
+    /** Draws one leg on either side of [cx], from an inner point tucked under the
+     *  body out to the tip. Mirroring the same offsets keeps both sides identical. */
+    private fun drawLegPair(
+        canvas: Canvas,
+        cx: Float,
+        innerDX: Float,
+        innerY: Float,
+        outerDX: Float,
+        outerY: Float,
+    ) {
         for (sign in floatArrayOf(1f, -1f)) {
-            canvas.save()
-            canvas.translate(cx, cy)
-            canvas.rotate(angle * sign)
-            canvas.drawLine(-halfW, 0f, halfW, 0f, linePaint)
-            canvas.restore()
+            canvas.drawLine(cx + innerDX * sign, innerY, cx + outerDX * sign, outerY, linePaint)
         }
     }
 

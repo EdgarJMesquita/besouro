@@ -2,14 +2,13 @@
 
 import { Switch, View } from 'react-native';
 
-import { safeStringify } from '../../../core/serialize';
 import { useBesouroUI } from '../../../shared/context';
 
 import { MonoText } from '../../../shared/components/MonoText';
 
 import { fontSize } from '../../../theme/tokens';
 
-import { truncate } from '../utils/coerce';
+import { propPreview } from '../utils/preview';
 import { asColor } from '../utils/color';
 import { ColorSwatch } from './ColorSwatch';
 import { PropName } from './PropName';
@@ -62,8 +61,7 @@ export function PropRow({
     );
   }
 
-  const preview =
-    typeof value === 'function' ? 'ƒ' : truncate(safeStringify(value), 140);
+  const preview = propPreview(value);
   // The read-only path is all a release build gets — no dev renderer, so every
   // value renders here. A color still shows as a color.
   const color = asColor(value);

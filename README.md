@@ -1,7 +1,11 @@
 # Besouro
 
+[![npm version](https://img.shields.io/npm/v/besouro.svg)](https://www.npmjs.com/package/besouro)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![platforms](https://img.shields.io/badge/platforms-ios%20%7C%20android-lightgrey.svg)](#requirements)
+
 On-device developer tools for React Native and Expo. Tap the floating bubble, get
-twelve inspectors. No laptop, no Flipper, no remote debugger.
+twelve inspectors. No laptop, no remote debugger.
 
 - **Network**: every request, with copy as cURL
 - **Console**: logs, uncaught errors, and native crashes recovered on the next launch
@@ -14,12 +18,9 @@ twelve inspectors. No laptop, no Flipper, no remote debugger.
 
 ## Requirements
 
-|                  |                                                          |
-| ---------------- | -------------------------------------------------------- |
-| **Architecture** | New Architecture only                                    |
-| **React Native** | 0.77+                                                    |
-| **Expo**         | SDK 53+, in a dev build (Expo Go can't load native code) |
-| **Platforms**    | iOS 15.1+ · Android 7 (API 24)+                          |
+- **New Architecture** only
+- **React Native** 0.77+
+- **Expo** SDK 53+, in a dev build (Expo Go can't load native code)
 
 ## Installation
 
@@ -38,13 +39,10 @@ cd ios && pod install
 npx react-native run-ios  # or run-android
 ```
 
-> **No bubble?** Installing the package isn't enough: the native module has to be
-> compiled in. Rebuild, don't just reload.
-
 ## Quick start
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 
 Besouro.init();
@@ -53,12 +51,15 @@ Besouro.init();
 ```js
 // index.js, before your app code
 if (__DEV__) {
-  require('./src/devtools');
+  require('./src/besouro');
 }
 ```
 
 Import it as early as possible. Anything that runs first is not captured: a socket
 opened at module load, a fetch fired before the app renders.
+
+Want to enable Besouro in QA or release builds? See
+[Shipping a release build with Besouro](#shipping-a-release-build-with-besouro).
 
 ## Enabled by default
 
@@ -96,7 +97,7 @@ opened at module load, a fetch fired before the app renders.
 ### Redux
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import { combineReducers, configureStore, createSlice } from '@reduxjs/toolkit';
 
@@ -127,7 +128,7 @@ up. One store per app.
 ### Zustand
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import { create } from 'zustand';
 
@@ -141,12 +142,12 @@ Besouro.zustand({ counter: useCounterStore }).init();
 <img src="docs/images/zustand-detail.webp" width="240" alt="One store: current state, then the keys each change touched">
 </div>
 
-The key becomes the store's name in the devtools, `counter` here.
+The key becomes the store's name in Besouro, `counter` here.
 
 ### Jotai
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import { atom, getDefaultStore } from 'jotai';
 
@@ -171,7 +172,7 @@ Only the atoms you name are captured.
 ### AsyncStorage
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -188,7 +189,7 @@ Besouro.asyncStorage(AsyncStorage).init();
 Requires react-native-mmkv v4.
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import { createMMKV } from 'react-native-mmkv';
 
@@ -206,7 +207,7 @@ Besouro.mmkv({ default: storage, settings }).init();
 ## Socket.IO
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import { Manager } from 'socket.io-client';
 
@@ -221,7 +222,7 @@ Besouro.socketIO(Manager).init();
 ## Notifications
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
@@ -242,7 +243,7 @@ Besouro.notifications({
 ## Full example
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Manager } from 'socket.io-client';
@@ -268,7 +269,7 @@ Besouro.configure({ accent: '#7c3aed' })
 ## Options
 
 ```ts
-// src/devtools.ts
+// src/besouro.ts
 import { Besouro } from 'besouro';
 
 Besouro.configure({
@@ -280,7 +281,7 @@ Besouro.configure({
 }).init();
 ```
 
-| Option        | Default     |                                                                         |
+| Option        | Default     | Notes                                                                   |
 | ------------- | ----------- | ----------------------------------------------------------------------- |
 | `maxSessions` | `10`        | Sessions kept on disk; older ones pruned at launch                      |
 | `theme`       | `'system'`  | `'system' \| 'light' \| 'dark'`                                         |
@@ -310,27 +311,27 @@ changeable at any time.
 
 <img src="docs/images/settings.webp" width="240" alt="The settings panel">
 
-## Shipping a build with the devtools
+## Shipping a release build with Besouro
 
-Keep the config in one file and require it behind a condition. Nothing else in your
-app imports the library.
+Sometimes you need Besouro in a release-mode build: a QA flavor, an internal
+beta, a release candidate you're chasing a bug in. Keep the config in one file and
+require it behind a flag that build sets, so your store release still drops it.
 
 ```js
 // index.js: the require is the switch
-if (__DEV__) {
-  require('./src/devtools');
+if (__DEV__ || process.env.EXPO_PUBLIC_BESOURO === '1') {
+  require('./src/besouro');
 }
 ```
 
-`__DEV__` is false in release, so the require never runs. For a QA or beta build, add
-a second condition (an env flag your build sets) or have a build script swap the check
-for `true`. Keep it build-time, not runtime.
+The flag has to be build-time, not runtime: an env var your bundler inlines, or a
+constant a build script swaps. A runtime check keeps the library in every bundle.
 
 ## Security
 
 Everything captured is stored raw in the app's sandbox: request and response bodies,
 headers, tokens, cookies, whatever the app logged. Session history keeps it across
-launches. Fine on your own device; treat any build that ships the devtools as internal
+launches. Fine on your own device; treat any build that ships Besouro as internal
 only, and don't hand one to anyone you wouldn't hand the data to.
 
 ## Example app
@@ -346,6 +347,7 @@ yarn example ios          # or: yarn example android
 
 ## Contributing
 
+- [Design spec](docs/SPEC.md) — architecture, API, and every inspector in detail
 - [Development workflow](CONTRIBUTING.md#development-workflow)
 - [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
 - [Code of conduct](CODE_OF_CONDUCT.md)

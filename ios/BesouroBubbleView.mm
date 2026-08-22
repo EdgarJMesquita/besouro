@@ -72,16 +72,25 @@
   CGContextSetLineCap(ctx, kCGLineCapRound);
 
   CGFloat barThickness = MAX(1.5f, s * 0.07f);
-  CGFloat barHalfW     = s * 0.38f;
 
-  // Legs — 2 pairs of rotated line segments (body drawn on top hides centres)
+  // Legs — three mirrored pairs: the top pair angles up, the middle runs flat and
+  // the bottom angles down. Each leg starts under the body (drawn last, so it
+  // hides the inner ends) instead of crossing it, which kept the two sides even.
   CGContextSetLineWidth(ctx, barThickness);
-  [self drawLegPairInContext:ctx
-                         cx:ox + s * 0.5f cy:oy + s * 0.34f + barThickness / 2.0f
-                      halfW:barHalfW angle:18.0f];
-  [self drawLegPairInContext:ctx
-                         cx:ox + s * 0.5f cy:oy + s * 0.52f + barThickness / 2.0f
-                      halfW:barHalfW angle:10.0f];
+  CGFloat legCX      = ox + s * 0.5f;
+  CGFloat legInnerDX = s * 0.20f;
+  CGFloat legOuterDX = s * 0.40f;
+  [self drawLegPairInContext:ctx cx:legCX
+                     innerDX:legInnerDX innerY:oy + s * 0.34f
+                     outerDX:legOuterDX outerY:oy + s * 0.26f];
+  // The middle pair leaves the body at its widest point, so it reaches a little
+  // further out to end up looking the same length as the angled ones.
+  [self drawLegPairInContext:ctx cx:legCX
+                     innerDX:legInnerDX innerY:oy + s * 0.48f
+                     outerDX:s * 0.43f  outerY:oy + s * 0.48f];
+  [self drawLegPairInContext:ctx cx:legCX
+                     innerDX:legInnerDX innerY:oy + s * 0.62f
+                     outerDX:legOuterDX outerY:oy + s * 0.70f];
 
   // Antennae — thin, angled outward from the head
   CGContextSetLineWidth(ctx, MAX(1.5f, s * 0.06f));
@@ -89,7 +98,7 @@
   [self drawRotatedSegmentInContext:ctx cx:ox + s * 0.39f cy:antCY halfH:s * 0.08f angle: 25.0f];
   [self drawRotatedSegmentInContext:ctx cx:ox + s * 0.61f cy:antCY halfH:s * 0.08f angle:-25.0f];
 
-  // Body — capsule, drawn last so it covers the leg crossings
+  // Body — capsule, drawn last so it covers the inner leg ends
   CGContextSetRGBFillColor(ctx, br, bg_, bb, 1.0);
   UIBezierPath *body = [UIBezierPath
       bezierPathWithRoundedRect:CGRectMake(ox + s * 0.25f, oy + s * 0.18f, s * 0.50f, s * 0.62f)
@@ -97,15 +106,14 @@
   [body fill];
 }
 
-// Draws two symmetric line segments rotated ±angleDeg from horizontal, centred at (cx, cy).
-- (void)drawLegPairInContext:(CGContextRef)ctx
-                          cx:(CGFloat)cx cy:(CGFloat)cy
-                       halfW:(CGFloat)halfW angle:(CGFloat)deg {
+// Draws one leg on either side of cx, from an inner point tucked under the body
+// out to the tip. Mirroring the same offsets keeps both sides identical.
+- (void)drawLegPairInContext:(CGContextRef)ctx cx:(CGFloat)cx
+                     innerDX:(CGFloat)innerDX innerY:(CGFloat)innerY
+                     outerDX:(CGFloat)outerDX outerY:(CGFloat)outerY {
   for (int sign = -1; sign <= 1; sign += 2) {
-    CGFloat theta = deg * sign * (CGFloat)M_PI / 180.0f;
-    CGFloat c = cosf(theta), s = sinf(theta);
-    CGContextMoveToPoint(ctx,    cx - halfW * c, cy - halfW * s);
-    CGContextAddLineToPoint(ctx, cx + halfW * c, cy + halfW * s);
+    CGContextMoveToPoint(ctx,    cx + innerDX * sign, innerY);
+    CGContextAddLineToPoint(ctx, cx + outerDX * sign, outerY);
   }
   CGContextStrokePath(ctx);
 }

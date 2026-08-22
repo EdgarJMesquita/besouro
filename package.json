@@ -13,12 +13,14 @@
     "./package.json": "./package.json"
   },
   "files": [
+    "src/native",
     "lib",
     "android",
     "ios",
     "cpp",
     "*.podspec",
     "react-native.config.js",
+    "!lib/typescript/**/*.d.ts.map",
     "!ios/build",
     "!android/build",
     "!android/gradle",
@@ -104,40 +106,8 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
-  },
-  "peerDependenciesMeta": {
-    "@notifee/react-native": {
-      "optional": true
-    },
-    "@react-native-async-storage/async-storage": {
-      "optional": true
-    },
-    "@react-native-firebase/messaging": {
-      "optional": true
-    },
-    "@reduxjs/toolkit": {
-      "optional": true
-    },
-    "expo-notifications": {
-      "optional": true
-    },
-    "jotai": {
-      "optional": true
-    },
-    "react-native-mmkv": {
-      "optional": true
-    },
-    "redux": {
-      "optional": true
-    },
-    "socket.io-client": {
-      "optional": true
-    },
-    "zustand": {
-      "optional": true
-    }
+    "react": ">=18.3.0",
+    "react-native": ">=0.77.0"
   },
   "workspaces": [
     "example"
@@ -150,7 +120,8 @@
       [
         "module",
         {
-          "esm": true
+          "esm": true,
+          "sourceMaps": false
         }
       ],
       [

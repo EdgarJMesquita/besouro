@@ -30,7 +30,7 @@ import {
  * drawer reports "stopped recording". `manifest-version.test.ts` pins the manifest
  * against this number so the two cannot drift apart again.
  */
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 const SQL_TYPES: Record<ColumnSpec['type'], string> = {
   text: 'TEXT',
