@@ -19,6 +19,7 @@
     "ios",
     "cpp",
     "*.podspec",
+    "NOTICE",
     "react-native.config.js",
     "!lib/typescript/**/*.d.ts.map",
     "!ios/build",
@@ -68,7 +69,7 @@
     "url": "git+https://github.com/EdgarJMesquita/besouro.git"
   },
   "author": "EdgarJMesquita <edgaroboe@outlook.com> (https://github.com/EdgarJMesquita)",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/EdgarJMesquita/besouro/issues"
   },

@@ -1,7 +1,7 @@
 # Besouro
 
 [![npm version](https://img.shields.io/npm/v/besouro.svg)](https://www.npmjs.com/package/besouro)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![platforms](https://img.shields.io/badge/platforms-ios%20%7C%20android-lightgrey.svg)](#requirements)
 
 On-device developer tools for React Native and Expo. Tap the floating bubble, get
@@ -343,7 +343,7 @@ only, and don't hand one to anyone you wouldn't hand the data to.
 
 ## License
 
-MIT
+Apache-2.0 — see [LICENSE](LICENSE). The license covers the code, not the name: "Besouro" stays ours.
 
 ---
 
