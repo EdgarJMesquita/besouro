@@ -72,6 +72,16 @@ export interface StringTable {
   sent: string;
   received: string;
   lifecycle: string;
+  /** Socket connection status labels, shown beside the status dot. */
+  connected: string;
+  disconnected: string;
+  /**
+   * History only: the connection was still up when the session ended, so it went
+   * down with the app rather than being dropped — see `settled` in SocketTabBase.
+   */
+  ended: string;
+  /** No lifecycle frame was captured, so the connection's state was never seen. */
+  unknownStatus: string;
   error: string;
   event: string;
   events: string;

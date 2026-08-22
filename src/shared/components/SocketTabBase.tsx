@@ -17,7 +17,8 @@ import type {
   InspectorKind,
   SocketDirection,
 } from '../../core/types';
-import { useSessionEvents } from '../context';
+import { useSessionEvents, useViewingSession } from '../context';
+import type { StringTable } from '../../i18n/types';
 import { useEventGroups } from '../hooks/event-groups';
 import { useEventDetail } from '../hooks/event-detail';
 import { PagedList } from './PagedList';
@@ -40,12 +41,17 @@ import { useDetailEntrance } from '../hooks/detail-slide';
 import { useEphemeralState } from '../../core/ephemeral-state';
 import { SocketClientRow } from './SocketClientRow';
 import { SocketFrameRow } from './SocketFrameRow';
-import { StatusDot } from './StatusDot';
+import { StatusDot, statusColor } from './StatusDot';
 import { DirectionPill } from './DirectionPill';
 import { layout } from '../styles';
 import { StyleSheet } from 'react-native';
 
-export type ConnectionStatus = 'connected' | 'disconnected' | 'unknown';
+/**
+ * A connection's state as the list reports it. Adapters derive the first three
+ * from a lifecycle frame; `ended` is history's alone — see {@link settled}.
+ */
+export type ConnectionStatus =
+  'connected' | 'disconnected' | 'unknown' | 'ended';
 
 /** A connection row derived from an inspector's frames. */
 export interface SocketClient {
@@ -89,6 +95,9 @@ export function SocketTab<
   Event extends BesouroEvent & { id: string; timestamp: number },
 >({ adapter }: { adapter: SocketAdapter<Event> }): React.ReactNode {
   const { strings } = useBesouroUI();
+  // A past session's newest lifecycle frame says how the connection stood when
+  // the session ended, not how it stands now — nothing has been connected since.
+  const viewing = useViewingSession() != null;
   const [query, setQuery] = useSearchQuery();
   // Shared component across WebSocket and Socket.IO, so scope the remembered
   // selection by kind or the two tabs would clobber each other.
@@ -114,11 +123,14 @@ export function SocketTab<
           label: newest ? adapter.clientLabelOf(newest) : group.key,
           count: group.count,
           last: group.lastAt,
-          status: adapter.statusOf((group.latest as Event | null) ?? null),
+          status: settled(
+            adapter.statusOf((group.latest as Event | null) ?? null),
+            viewing
+          ),
           url: newest ? adapter.urlOf(newest) : undefined,
         };
       }),
-    [groups, adapter]
+    [groups, adapter, viewing]
   );
 
   const selectedClient =
@@ -186,6 +198,33 @@ export function SocketTab<
 /** Newest frame whose direction is `lifecycle` — what a connection's status reads. */
 const LIFECYCLE_FILTER = { field: 'direction', value: 'lifecycle' } as const;
 
+/**
+ * The status to show for a connection. `connected` only means anything while the
+ * session is still running; in history the same frame means the socket was still
+ * up when the app exited and went down with it, which is `ended`.
+ *
+ * That is a state of its own rather than `disconnected`, which stays reserved for
+ * a connection the other end dropped while the session was running — the one
+ * difference worth seeing at a glance in a list of dead connections.
+ */
+function settled(
+  status: ConnectionStatus,
+  viewingPastSession: boolean
+): ConnectionStatus {
+  return viewingPastSession && status === 'connected' ? 'ended' : status;
+}
+
+/** The word beside the status dot. */
+function statusLabel(strings: StringTable, status: ConnectionStatus): string {
+  return status === 'connected'
+    ? strings.connected
+    : status === 'disconnected'
+      ? strings.disconnected
+      : status === 'ended'
+        ? strings.ended
+        : strings.unknownStatus;
+}
+
 function SocketClientDetail<
   Event extends BesouroEvent & { id: string; timestamp: number },
 >({
@@ -202,7 +241,7 @@ function SocketClientDetail<
   search: string;
 }): React.ReactNode {
   const s = useStyles();
-  const { theme, strings, font } = useBesouroUI();
+  const { theme, strings } = useBesouroUI();
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
 
   // Frames page within this connection, so opening a busy socket doesn't load
@@ -297,15 +336,8 @@ function SocketClientDetail<
         <View style={s.row}>
           <BackButton />
           <StatusDot status={status} />
-          <Text
-            style={{
-              color: status === 'connected' ? theme.success : theme.danger,
-              fontSize: font(fontSize.caption),
-              fontWeight: fontWeight.bold,
-              textTransform: 'capitalize',
-            }}
-          >
-            {status}
+          <Text style={[s.status, { color: statusColor(theme, status) }]}>
+            {statusLabel(strings, status)}
           </Text>
         </View>
         {url ? (
@@ -359,6 +391,10 @@ function useStyles() {
         },
         fieldValue: {
           marginTop: space.xs,
+        },
+        status: {
+          fontSize: font(fontSize.caption),
+          fontWeight: fontWeight.bold,
         },
         row2: {
           flexDirection: 'row',
