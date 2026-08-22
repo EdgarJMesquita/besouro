@@ -4,6 +4,19 @@ Contributions are always welcome, no matter how large or small!
 
 We want this community to be friendly and respectful to each other. Please follow it in all your interactions with the project. Before contributing, please read the [code of conduct](./CODE_OF_CONDUCT.md).
 
+## Design spec
+
+[`docs/SPEC.md`](./docs/SPEC.md) is the design document for the library: the package
+architecture, the public API, every inspector's interception strategy and captured
+event shape, persistence and crash recovery, the configuration reference, and the
+security model. It explains the *why* behind decisions the code can only show you the
+*what* of — for example why the builder takes optional peers from the consumer instead
+of requiring them itself.
+
+Read it before working on an inspector, and **keep it in the same commit as the change**:
+if your pull request alters the API, an event shape, or an inspector's behavior, update
+the matching section of the spec alongside the code.
+
 ## Development workflow
 
 This project is a monorepo managed using [Yarn workspaces](https://yarnpkg.com/features/workspaces). It contains the following packages:
@@ -135,6 +148,7 @@ When you're sending a pull request:
 
 - Prefer small pull requests focused on one change.
 - Verify that linters and tests are passing.
+- Update [`docs/SPEC.md`](./docs/SPEC.md) in the same commit if you changed the API, an event shape, or an inspector's behavior.
 - Review the documentation to make sure it looks good.
 - Follow the pull request template when opening a pull request.
 - For pull requests that change the API or implementation, discuss with maintainers first by opening an issue.

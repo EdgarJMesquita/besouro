@@ -3,7 +3,7 @@
 > An in-app developer tools suite for React Native / Expo. Runs in a Dev Client
 > and bare React Native.
 
-Status: **Draft v0.1** · Last updated: 2026-07-17
+Status: **Living spec, tracks v0.1.0** · Last updated: 2026-08-21
 
 ---
 
@@ -19,7 +19,8 @@ one tab per enabled inspector.
 ### Design goals
 
 1. **Runs in a Dev Client and bare RN** (not Expo Go — the library ships a native
-   TurboModule), on both the old architecture and the New Architecture (Fabric).
+   TurboModule), on the New Architecture (Fabric). The old architecture is not a
+   supported target (§2).
 2. **Strippable from release builds.** The consumer loads the whole devtools graph
    behind their own condition (`if (__DEV__) require('./tools/devtools')`), so the
    bundler eliminates it entirely. No runtime production switch — a flag can't strip
@@ -84,15 +85,25 @@ clearly exceed it (HAR + cURL export, 4-tab detail, URL ellipsis modes — see �
 
 ## 2. Target Environments
 
-| Environment       | Supported | Notes                                        |
-| ----------------- | --------- | -------------------------------------------- |
-| Expo Go           | ❌        | Ships a native TurboModule; use a Dev Client |
-| Expo Dev Client   | ✅        |                                              |
-| Bare React Native | ✅        |                                              |
-| Old architecture  | ✅        | Except the HTML response preview (§6.1)      |
-| New arch (Fabric) | ✅        | Element inspector verified on both           |
-| React             | 18 & 19   |                                              |
-| React Native      | ≥ 0.74    | Uses stable internal interceptor modules     |
+| Environment       | Supported | Notes                                          |
+| ----------------- | --------- | ---------------------------------------------- |
+| Expo Go           | ❌        | Ships a native TurboModule; use a Dev Client   |
+| Expo Dev Client   | ✅        | SDK 53+                                        |
+| Bare React Native | ✅        |                                                |
+| New arch (Fabric) | ✅        | The only supported renderer                    |
+| Old architecture  | ❌        | Untested; see the note below                   |
+| React             | 19        |                                                |
+| React Native      | ≥ 0.77    | Developed against 0.83                         |
+| iOS               | ≥ 15.1    |                                                |
+| Android           | ≥ 7 (24)  |                                                |
+
+**On the old architecture.** Several inspectors still carry Paper code paths —
+`getNativeTag()` reads `_nativeTag` when `canonical.nativeTag` is absent
+(`src/inspectors/element/fiber.ts`), and the HTML response preview gates on
+`isFabricRenderer()` and degrades to a message (`src/shared/fabric.ts`, §6.1).
+Those are **defensive fallbacks, not a support claim**: they keep the library from
+crashing a host app that ends up on the legacy renderer, and they are not tested
+or maintained as a target. Do not read them as old-architecture support.
 
 ---
 
@@ -2046,8 +2057,11 @@ persisted sessions with crash recovery, copy-as-cURL, export/share.
 
 - **Element inspector hit-testing:** renderer API (`getInspectorDataForViewAtPoint`
   off the DevTools hook's `rendererConfig`), not manual fiber traversal. (See §6.6.)
-
 - **Export format:** both — **HAR** for the Network tab (opens directly in browser
   devtools), **JSON** for all inspectors. (See §7.)
-- **npm scope:** deferred — decide before first publish (`besouro`
-  vs. an org scope).
+- **npm scope:** unscoped `besouro` (`package.json`), not an org scope.
+
+### Open
+
+None — everything raised during the v1 design is resolved above. New questions go
+here as they come up.
