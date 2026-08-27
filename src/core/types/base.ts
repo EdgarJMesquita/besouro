@@ -33,7 +33,8 @@ export type InspectorKind =
  * `fileSystem` is the first "browser"-class inspector: it navigates the app's
  * sandbox on demand rather than capturing events, so it appears here (and as a
  * drawer tab) but contributes no member to {@link InspectorKind} /
- * {@link BesouroEvent}.
+ * {@link BesouroEvent}. `viewHierarchy` is the same: it snapshots the native
+ * view tree when asked and keeps nothing.
  */
 export type Inspector =
   | 'network'
@@ -47,7 +48,8 @@ export type Inspector =
   | 'zustand'
   | 'redux'
   | 'jotai'
-  | 'fileSystem';
+  | 'fileSystem'
+  | 'viewHierarchy';
 
 /**
  * Tab order in the drawer, and the order the controller installs in.
@@ -86,6 +88,7 @@ export const INSPECTOR_ORDER: readonly Inspector[] = [
   'asyncStorage',
   'mmkv',
   'element',
+  'viewHierarchy',
   'fileSystem',
 ];
 
@@ -101,6 +104,7 @@ export const INSPECTOR_ORDER: readonly Inspector[] = [
  */
 export const BROWSER_INSPECTORS: readonly Inspector[] = [
   'element',
+  'viewHierarchy',
   'fileSystem',
 ];
 

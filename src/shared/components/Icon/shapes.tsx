@@ -3,7 +3,7 @@
  * `Icon` dispatcher so that file stays a readable index of the set.
  */
 
-import { View, type ViewStyle } from 'react-native';
+import { Platform, View, type ViewStyle } from 'react-native';
 
 export interface ShapeProps {
   size: number;
@@ -807,6 +807,133 @@ export function RefreshIcon({ size, color }: ShapeProps): React.ReactNode {
           transform: [{ rotate: '90deg' }],
         }}
       />
+    </View>
+  );
+}
+
+/**
+ * The lean of `layers`, named per platform because the two do not agree on which
+ * axis is which: what iOS renders for `skewY`, Android renders for `skewX`.
+ * Written as the *result* rather than the property, so the glyph leans the same
+ * way on both and the swap is stated once instead of being discovered again.
+ */
+const LEAN: ViewStyle['transform'] =
+  Platform.OS === 'android' ? [{ skewX: '-18deg' }] : [{ skewY: '-18deg' }];
+
+// The `row` used by GridOutlineIcon's two rows of cells.
+const rowStyle: ViewStyle = { flexDirection: 'row' };
+
+/**
+ * Four outlined squares, nearly touching — the stage seen square on.
+ *
+ * The drawer's own `grid` icon with two changes: outlined rather than filled, and
+ * the cells pulled almost together. Filled cells read as content; these are
+ * frames, which is what the stage draws. And the wide gap that suits a
+ * list/grid switch reads here as four separate things, when the point is one
+ * surface seen flat.
+ */
+export function GridOutlineIcon({ size, color }: ShapeProps): React.ReactNode {
+  const gap = Math.max(1, size * 0.09);
+  const cell: ViewStyle = {
+    width: (size - gap) / 2,
+    height: (size - gap) / 2,
+    borderWidth: 1,
+    borderColor: color,
+  };
+  return (
+    <View style={{ width: size, height: size, gap }}>
+      <View style={[rowStyle, { gap }]}>
+        <View style={cell} />
+        <View style={cell} />
+      </View>
+      <View style={[rowStyle, { gap }]}>
+        <View style={cell} />
+        <View style={cell} />
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Three sheets stacked back and to the left — the stack, angled.
+ *
+ * The same figure the stage draws when the toggle is on, down to the direction:
+ * far sheets ride left and up, which is where {@link ANGLED} sends them. Xcode's
+ * view-debugger button is this shape, and it is the shape for the same reason —
+ * a picture of the thing, not a symbol standing in for it.
+ *
+ * Skewed rather than rotated in perspective. A `rotateY` foreshortens the sheet,
+ * so at an angle steep enough to read as turned each one came out a sliver, and
+ * three slivers do not read as a stack of anything. A skew keeps the vertical
+ * edges vertical and full width and tilts only the horizontal ones, which is
+ * what the reference glyph does — and at fifteen pixels across, the honest
+ * projection is the one that survives.
+ *
+ * Almost entirely overlapped, and that is the whole figure: one sheet drawn whole
+ * with a sliver of each one behind it. Spaced evenly they carry equal weight and
+ * the thing reads as columns; stacked this way there is a front, and the rest is
+ * depth behind it.
+ *
+ * ## The fill
+ *
+ * The sheets are opaque, and that is what makes the stack a stack. Outlined
+ * alone, the back sheets' far edges run straight through the front one, so the
+ * figure is a tangle of crossing lines with no front and no back. Filling them
+ * lets the near sheet hide what is behind it, which is the only depth cue a
+ * fifteen-pixel drawing has.
+ *
+ * The fill is the surface the glyph sits on rather than any colour of its own —
+ * it is occlusion, not paint, and a colour would read as a solid object.
+ *
+ * ## Filling the box
+ *
+ * Every number below is chosen so the figure spans nearly the whole `size`, the
+ * way {@link GridOutlineIcon}'s four cells do. Two glyphs at one `size` only look like
+ * one size if each fills its box: this one drew a sheet half the width with tight
+ * steps, so the figure lived in about 70% of its box and read visibly smaller
+ * beside the other at the same nominal size. The alternative — a different `size`
+ * per glyph — pushes the problem onto every caller.
+ *
+ * The horizontal fill is `width + 2 · step`, not width alone — the part worth
+ * remembering. Widening the sheet to fill the box turned a square card into a
+ * rectangle, when the step was the half that had room to give.
+ */
+export function LayersIcon({
+  size,
+  color,
+  background,
+}: ShapeProps & {
+  /** What the glyph is drawn on — see the fill note above. */
+  background: string;
+}): React.ReactNode {
+  const sheet: ViewStyle = {
+    position: 'absolute',
+    width: size * 0.62,
+    height: size * 0.62,
+    borderWidth: 1,
+    borderColor: color,
+    borderRadius: Math.max(1, size * 0.08),
+    backgroundColor: background,
+    // The skew spreads the shape vertically by `width · tan(18°)`, which is why
+    // the sheet is not as tall as the box: the lean claims the rest.
+    transform: LEAN,
+  };
+  return (
+    <View style={{ width: size, height: size }}>
+      {/* Painted back to front, so the nearest sheet — the lowest, rightmost
+          one — is the one drawn whole and the others fall behind it. */}
+      {[0, 1, 2].map((step) => (
+        <View
+          key={step}
+          style={[
+            sheet,
+            {
+              left: size * (0.045 + 0.145 * step),
+              top: size * (0.1 + 0.09 * step),
+            },
+          ]}
+        />
+      ))}
     </View>
   );
 }

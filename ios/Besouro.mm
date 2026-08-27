@@ -6,6 +6,7 @@
 #import "BesouroFileStore.h"
 #import "BesouroSurfaceController.h"
 #import "BesouroShare.h"
+#import "BesouroViewTreeSnapshot.h"
 #import "BesouroWindows.h"
 
 #import <UIKit/UIKit.h>
@@ -154,6 +155,21 @@ static BOOL sProcessInitialized = NO;
     // Dismiss the drawer so the app receives touches.
     [self.surfaceController close];
     [self.elementPicker startWithResult:onResult];
+  });
+}
+
+// ── View tree snapshot ──────────────────────────────────────────────────────
+// The whole native view tree under the app root, for the View Hierarchy tab. Same
+// walk as the element pick, minus the point test; see `BesouroViewTreeSnapshot`.
+//
+// A promise because it must run on the main thread: TurboModule methods are
+// invoked on the JS thread, and touching UIKit off the main thread is undefined
+// behaviour. Same hop as `getSafeAreaInsets`.
+
+- (void)snapshotViewTree:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    resolve([BesouroViewTreeSnapshot captureJSON]);
   });
 }
 

@@ -154,6 +154,31 @@ class BesouroModule(reactContext: ReactApplicationContext) :
         }
     }
 
+    /**
+     * Snapshot the whole native view tree under the React root, for the View
+     * Hierarchy tab. Same walk as the element pick, minus the point test; see
+     * [ViewTreeSnapshot].
+     *
+     * A promise because it must run on the UI thread: TurboModule methods are
+     * invoked on the JS thread, and touching `View` off the main thread is
+     * undefined behaviour. Same hop as [getSafeAreaInsets].
+     */
+    override fun snapshotViewTree(promise: Promise) {
+        val activity = reactApplicationContext.currentActivity
+        if (activity == null) {
+            promise.resolve(EMPTY_SNAPSHOT)
+            return
+        }
+        val density = reactApplicationContext.resources.displayMetrics.density
+        UiThreadUtil.runOnUiThread {
+            try {
+                promise.resolve(ViewTreeSnapshot.capture(activity, density))
+            } catch (e: Exception) {
+                promise.reject("Besouro", e)
+            }
+        }
+    }
+
     // ── Filesystem persistence ────────────────────────────────────────────────
 
     override fun readFile(filename: String, promise: Promise) {
@@ -264,6 +289,10 @@ class BesouroModule(reactContext: ReactApplicationContext) :
     }
 
     companion object {
+        /** What [snapshotViewTree] answers when there is no Activity to walk. */
+        private const val EMPTY_SNAPSHOT =
+            """{"nodes":[],"width":0,"height":0,"truncated":false}"""
+
         const val NAME = NativeBesouroSpec.NAME
 
         /** Process-lifetime flag: set the first time the module is created in a

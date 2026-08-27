@@ -1,7 +1,7 @@
 {
   "name": "besouro",
-  "version": "0.1.0",
-  "description": "On-device developer tools for React Native / Expo: network, WebSocket, Socket.IO, console, notifications, element, files, Redux, Zustand, Jotai, AsyncStorage and MMKV inspectors in a draggable in-app panel.",
+  "version": "0.2.0",
+  "description": "On-device developer tools for React Native / Expo: network, WebSocket, Socket.IO, console, notifications, element, view hierarchy, files, Redux, Zustand, Jotai, AsyncStorage and MMKV inspectors in a draggable in-app panel.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
@@ -50,6 +50,7 @@
     "devtools",
     "debugging",
     "inspector",
+    "view-hierarchy",
     "network-inspector",
     "websocket",
     "socket.io",

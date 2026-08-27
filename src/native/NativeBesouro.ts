@@ -146,6 +146,45 @@ export interface Spec extends TurboModule {
   /** SPIKE — put the surface back to full-screen. No-op when closed. */
   resetSurfaceFrame(): void;
 
+  /**
+   * The whole native view tree under the app's React root, as a JSON string, for
+   * the View Hierarchy tab (SPEC §6.12).
+   *
+   * The same walk the element pick already does ({@link startElementInspection}),
+   * with the point test removed: it visits every child instead of the one under
+   * the finger. So it inherits the property that matters — built from plain
+   * platform getters, never React Native internals, and therefore alive in a
+   * release build where the renderer's own tree is not reachable.
+   *
+   * Shape:
+   * ```
+   * { width: number, height: number, truncated: boolean, nodes: Node[] }
+   *
+   * Node = { tag, className, depth, parent, left, top, width, height,
+   *          testID?, text?, textSize?, textAlign?, radius?, fragment? }
+   * ```
+   * Flat, each node carrying its `depth` and its `parent`'s index, because
+   * codegen cannot express a recursive struct — JS rebuilds the tree. Frames are
+   * absolute, in dp/points, relative to the React root, with scroll offsets
+   * already applied.
+   *
+   * **Sparse.** The optional fields are omitted rather than sent empty: they are
+   * absent on most views, and at a hundred-odd nodes the zeros and empty strings
+   * were the bulk of the payload. JS fills the defaults back in, so its
+   * `HierarchyNode` stays a complete record.
+   *
+   * A JSON **string** rather than a struct array, deliberately: it is the escape
+   * hatch we would reach for anyway if node counts turn out high, it costs
+   * nothing to parse at these sizes, and `.length` is then a direct measure of
+   * what this feature puts on the bridge.
+   *
+   * `truncated` is true when the walk stopped at the node cap — the snapshot is a
+   * valid prefix, not the whole tree.
+   *
+   * A promise because both platforms must hop to the main thread to touch views.
+   */
+  snapshotViewTree(): Promise<string>;
+
   // ── Native filesystem persistence ────────────────────────────────────────
   // Files live in the app's internal storage (no permissions needed).
   // Android: <filesDir>/besouro/

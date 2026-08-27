@@ -415,6 +415,7 @@ export default function App() {
             paddingTop: 10,
             paddingBottom: 6,
             backgroundColor: '#d2d2d2',
+            borderRadius: 12,
           }}
         >
           <View style={{ backgroundColor: '#f0f0f0', padding: 14, margin: 12 }}>

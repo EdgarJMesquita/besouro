@@ -5,7 +5,7 @@
 [![platforms](https://img.shields.io/badge/platforms-ios%20%7C%20android-lightgrey.svg)](#requirements)
 
 On-device developer tools for React Native and Expo. Tap the floating bubble, get
-twelve inspectors. No laptop, no remote debugger.
+thirteen inspectors. No laptop, no remote debugger.
 
 - **Network**: every request, with copy as cURL
 - **Console**: logs, uncaught errors, and native crashes recovered on the next launch
@@ -14,6 +14,7 @@ twelve inspectors. No laptop, no remote debugger.
 - **Redux**, **Zustand** and **Jotai**: actions, live state, and what changed
 - **AsyncStorage** and **MMKV**: every operation, and for MMKV the stored contents
 - **Element**: tap any component to read and edit its props
+- **View Hierarchy**: the native view tree as an exploded 3D stack
 - **Files**: browse and share the app's sandbox
 
 ## Requirements
@@ -84,6 +85,10 @@ Want to enable Besouro in QA or release builds? See
 ### Element
 
 <img src="docs/images/element.webp" width="240" alt="A picked component with its box model, hierarchy and editable styles">
+
+### View Hierarchy
+
+<img src="docs/images/hierarchy.webp" width="240" alt="The native view tree as an exploded 3D stack, over the indented tree it came from">
 
 ### Files
 
@@ -281,13 +286,13 @@ Besouro.configure({
 }).init();
 ```
 
-| Option        | Default     | Notes                                                                   |
-| ------------- | ----------- | ----------------------------------------------------------------------- |
-| `maxSessions` | `10`        | Sessions kept on disk; older ones pruned at launch                      |
-| `theme`       | `'system'`  | `'system' \| 'light' \| 'dark'`                                         |
-| `accent`      | theme's own | `'#rrggbb'`                                                             |
-| `locale`      | `'system'`  | `'system' \| 'en' \| 'pt' \| 'es'`                                      |
-| `inspectors`  | all on      | Switch off `network`, `console`, `websocket`, `element` or `fileSystem` |
+| Option        | Default     | Notes                                                                                    |
+| ------------- | ----------- | ---------------------------------------------------------------------------------------- |
+| `maxSessions` | `10`        | Sessions kept on disk; older ones pruned at launch                                       |
+| `theme`       | `'system'`  | `'system' \| 'light' \| 'dark'`                                                          |
+| `accent`      | theme's own | `'#rrggbb'`                                                                              |
+| `locale`      | `'system'`  | `'system' \| 'en' \| 'pt' \| 'es'`                                                       |
+| `inspectors`  | all on      | Switch off `network`, `console`, `websocket`, `element`, `viewHierarchy` or `fileSystem` |
 
 ## Session history
 
@@ -334,7 +339,6 @@ headers, tokens, cookies, whatever the app logged. Session history keeps it acro
 launches. Fine on your own device; treat any build that ships Besouro as internal
 only, and don't hand one to anyone you wouldn't hand the data to.
 
-
 ## Contributing
 
 - [Development workflow](CONTRIBUTING.md#development-workflow)
@@ -343,7 +347,7 @@ only, and don't hand one to anyone you wouldn't hand the data to.
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE). The license covers the code, not the name: "Besouro" stays ours.
+Apache-2.0 — see [LICENSE](LICENSE).
 
 ---
 

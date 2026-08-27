@@ -119,6 +119,12 @@ export interface StringTable {
   tabRedux: string;
   tabJotai: string;
   tabElement: string;
+  /**
+   * Xcode's name for this, and worth the extra word: the drawer already uses
+   * "Hierarchy" for the ancestor chain inside the Element tab, so the bare noun
+   * would name a tab and a section of a different tab at the same time.
+   */
+  tabViewHierarchy: string;
   tabFileSystem: string;
   noStores: string;
   noInstances: string;
@@ -160,6 +166,33 @@ export interface StringTable {
   preview: string;
   previewFailed: string;
   fileSystemUnavailable: string;
+  /**
+   * View Hierarchy tab: snapshot the native view tree and draw it to scale.
+   *
+   * Shown when a capture came back empty — the tab captures on open.
+   */
+  viewHierarchyHint: string;
+  viewHierarchyUnavailable: string;
+  /** Depth control label — how many depth planes the exploded stack draws. */
+  viewHierarchyDepth: string;
+  /** Spread control label — the gap between adjacent depth planes. */
+  viewHierarchySpread: string;
+  /** Puts the camera back to where the stack opened — square on. */
+  viewHierarchyReset: string;
+  /** Turns the stack, so the sheets separate. The other half of the same toggle. */
+  viewHierarchyAngle: string;
+  /** Accessible name for the stage backdrop, whose only job is to deselect. */
+  viewHierarchyClearSelection: string;
+  /** Header over the tree list while a subtree is focused. */
+  viewHierarchyFocused: string;
+  /** Leaves a focused subtree and redraws the whole capture. */
+  viewHierarchyUnfocus: string;
+  /**
+   * Shown when the native walk stopped at its node cap. What came back is a
+   * valid prefix of the tree rather than the tree, and the tab has to say so —
+   * every other reading of the picture depends on it being complete.
+   */
+  viewHierarchyTruncated: string;
   modified: string;
   size: string;
   path: string;

@@ -224,6 +224,8 @@ export function labelFor(inspector: Inspector, strings: StringTable): string {
       return strings.tabRedux;
     case 'jotai':
       return strings.tabJotai;
+    case 'viewHierarchy':
+      return strings.tabViewHierarchy;
     case 'fileSystem':
       return strings.tabFileSystem;
     case 'element':

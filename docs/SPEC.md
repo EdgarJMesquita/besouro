@@ -71,8 +71,9 @@ covers **only** network.
 - **On-device, zero desktop/connection** — works on physical devices and QA/beta
   builds, where connected debuggers can't reach (§11).
 - **All-in-one** — network + WebSocket + **Socket.IO (decoded)** + console +
-  notifications + element + AsyncStorage. In-app **Socket.IO and notifications**
-  inspection are things essentially nothing else offers.
+  notifications + element + **view hierarchy** + AsyncStorage. In-app **Socket.IO
+  and notifications** inspection are things essentially nothing else offers, and
+  an on-device 3D view hierarchy is a thing Xcode only does over a cable.
 - **Localized** (en/pt/es) — uncommon among in-app tools.
 
 **Positioning risks (be honest).** The official RN DevTools is the default and
@@ -85,17 +86,17 @@ clearly exceed it (HAR + cURL export, 4-tab detail, URL ellipsis modes — see �
 
 ## 2. Target Environments
 
-| Environment       | Supported | Notes                                          |
-| ----------------- | --------- | ---------------------------------------------- |
-| Expo Go           | ❌        | Ships a native TurboModule; use a Dev Client   |
-| Expo Dev Client   | ✅        | SDK 53+                                        |
-| Bare React Native | ✅        |                                                |
-| New arch (Fabric) | ✅        | The only supported renderer                    |
-| Old architecture  | ❌        | Untested; see the note below                   |
-| React             | 19        |                                                |
-| React Native      | ≥ 0.77    | Developed against 0.83                         |
-| iOS               | ≥ 15.1    |                                                |
-| Android           | ≥ 7 (24)  |                                                |
+| Environment       | Supported | Notes                                        |
+| ----------------- | --------- | -------------------------------------------- |
+| Expo Go           | ❌        | Ships a native TurboModule; use a Dev Client |
+| Expo Dev Client   | ✅        | SDK 53+                                      |
+| Bare React Native | ✅        |                                              |
+| New arch (Fabric) | ✅        | The only supported renderer                  |
+| Old architecture  | ❌        | Untested; see the note below                 |
+| React             | 19        |                                              |
+| React Native      | ≥ 0.77    | Developed against 0.83                       |
+| iOS               | ≥ 15.1    |                                              |
+| Android           | ≥ 7 (24)  |                                              |
 
 **On the old architecture.** Several inspectors still carry Paper code paths —
 `getNativeTag()` reads `_nativeTag` when `canonical.nativeTag` is absent
@@ -182,8 +183,9 @@ TurboModules generated via New Architecture codegen from the specs in `src/nativ
 A **fluent builder**. Inspectors split into two kinds, and which kind an inspector is
 decides how it is turned on:
 
-- **Self-sufficient** — network, console, websocket, element, fileSystem. They need
-  nothing from the consumer, so they are **on by default**.
+- **Self-sufficient** — network, console, websocket, element, viewHierarchy,
+  fileSystem.
+  They need nothing from the consumer, so they are **on by default**.
 - **Dependency-required** — asyncStorage, zustand, socketio, notifications. They
   cannot observe anything without a module or a store map from the consumer (§4.1),
   so supplying it via the matching inspector method **is** how they are enabled.
@@ -195,7 +197,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Configure once, as early as possible (dev-only at the call site, §11).
 Besouro.configure({
   maxSessions: 10, // retained sessions — the only retention control (§9)
-  inspectors: { element: false }, // the five default-on ones; omit to keep all five
+  inspectors: { element: false }, // the six default-on ones; omit to keep them all
 })
   .asyncStorage(AsyncStorage) // optional peer: consumer hands us the module
   .init();
@@ -332,8 +334,8 @@ type BesouroEvent =
 ```
 
 There are **nine** event kinds. The element inspector contributes none: like the
-File System inspector it is a "browser"-class tool that inspects one thing on
-demand, holding the currently-inspected element in a session-only side store
+File System and View Hierarchy inspectors it is a "browser"-class tool that inspects
+one thing on demand, holding the currently-inspected element in a session-only side store
 (`inspectors/element/store/inspection.ts`). That also keeps its fiber and renderer —
 neither serializable — out of anything that reaches disk.
 
@@ -1367,6 +1369,98 @@ log and leaves the Store pane intact** — the snapshot row is excluded from the
 did, and a devtool's Clear has never reached into the app's own storage. The instance
 stays listed, reading 0 changes.
 
+### 6.12 View Hierarchy Inspector
+
+The native view tree under the app's React root, drawn as an exploded 3D stack —
+one sheet per depth level, orbited with a finger — beside the indented tree it came
+from. Xcode's view debugger and Safari's Layers panel, on the device, with no cable.
+
+**Mechanism.** One TurboModule call, `snapshotViewTree(): Promise<string>`. Native
+walks the tree from the React root and returns it as a **JSON string**, not a
+codegen struct array: codegen cannot express a recursive struct anyway, the parse
+costs nothing at these sizes, and `.length` in JS is then a direct measure of what
+the feature puts on the bridge. A measured screen is ~120 nodes / ~19KB / ~5ms.
+
+The walk is the element picker's descent (§6.6) with the point test removed — it
+visits every child instead of the one under the finger — so it inherits the property
+that matters: **built from plain platform getters, never React Native internals**.
+`UIView.subviews` and `ViewGroup.getChildAt`, `attributedText` and `TextView.getText`,
+`layer.cornerRadius` and `Outline.getRadius`. The renderer's own tree is unreachable
+in a release build; this is not, so the tab works where the Element tab degrades.
+
+A promise because both platforms must hop to the main thread to touch views.
+
+**Shape.** A flat array, each node carrying `depth` and its `parent`'s index, with
+frames absolute in dp/points relative to the root and scroll offsets already applied.
+`parent` is read from the walk rather than inferred from `depth` and document order,
+and that independence is what makes plane assignment work — see below. The payload is
+**sparse**: `testID`, `text`, `textSize`, `textAlign` and `radius` are omitted where
+the view has none, which is most views and was most of the payload. JS restores the
+defaults on parse, so `HierarchyNode` stays a complete record.
+
+The walk stops at 50,000 nodes — a ceiling, not a budget: three orders of magnitude
+above any real screen, and still bounded, because a devtool must not hang the app it
+is inspecting and an unbounded walk over a corrupt view graph would. Reaching it is
+reported (`truncated`) rather than hidden, and the tab says so above the stage.
+
+**Depth is real, not a shear.** React Native's transform list has no `translateZ`,
+which looks at first like it rules out perspective. It does not: under a perspective
+projection at camera distance `P`, a plane at depth `z` projects to a _uniform scale_
+about the projection centre, `k = P / (P − z)`, with its centre at `(x·k, y·k)` —
+both things RN can express as `scale` and `translateX/Y`. So the projection is
+computed in `projection.ts` and RN is handed the 2D result. The stack converges on a
+real vanishing point. Orbiting turns the stack around a **pivot**: the selected view,
+or whatever is in the middle of the stage. Without one, zooming into a corner and
+orbiting swings that corner away — you look at one part of the picture and turn a
+different one.
+
+**One plane per depth is not enough.** Two rules decide which sheet a view lands on
+(`planes.ts`): a view is one plane in front of _where its parent landed_, and a view
+falling inside a rectangle already taken on its plane is pushed forward until it
+finds clear space. The second rule exists because **React Native flattens hierarchy**:
+`<View><View><Text>` with a background on each comes back as three _siblings_ of the
+same parent — nested in geometry, flat in structure, confirmed by `parent` reporting
+the same index for all three. Placed by parentage alone they share one sheet, and a
+view drawn on top of the one containing it is invisible. Containment is the test
+rather than equality, since identical frames are just the case where each contains
+the other.
+
+**Focus** narrows both halves to one view and its descendants — double tap a box or a
+tree row, Xcode's "Focus on selected view". A subtree is a _contiguous slice_ of the
+capture, because both walks emit depth-first in draw order, and a range keeps every
+index in the tab meaning what it meant. Focusing re-frames rather than filters: `fit`,
+the sheet size, the screen outline, the plane numbering and the tree's indentation all
+re-base on the focused frame. The camera resets on the way in and is restored on the
+way out.
+
+**Development tooling is dropped in JS, not natively** (`dev-tooling.ts`), so the
+captured payload stays a faithful report and only what the tab draws is filtered.
+Three passes: top-level branches with no React tag anywhere in them (the Expo dev
+bubble), `DebuggingOverlay` subtrees by name, and containers left holding nothing.
+Filtering renumbers the array, so `parent` is repointed at the survivors — without
+that, plane assignment silently falls back to `depth` on every dev build.
+
+**Drawing.** Text views are replicated at the app's own size and alignment — but not
+its colour, since a label in the stack is read against accent fills and the stage,
+not against the surface it sits on in the app. Class names are shown only on the
+full-bleed chain and on the current selection: they are the one invented thing on
+screen, and a name on every box buries the shapes the picture is _of_ under a wall of
+text the tree list already carries in full. Views outside the captured screen — a
+ScrollView reports its whole scrollable extent — are drawn faint rather than clipped,
+so the two halves of the tab never disagree about which views exist.
+
+**Controls.** Depth is a two-thumb range: a capture opens with a run of full-bleed
+chrome nobody is inspecting, and that sits at the _back_, where a single-ended
+control could never reach it. Spread sets the gap between sheets. Both are sliders,
+built here from `PanResponder` rather than installed — RN dropped `Slider` from core
+and this library has no dependencies at all. In the stage's corner sits one toggle:
+square on, or turned and framed, solving the zoom and pan that put the whole stack on
+the stage.
+
+**Not an event source.** Like Element and File System it is a "browser"-class tool
+(§5): it captures on demand, holds nothing, writes nothing to SQLite, and contributes
+no member to `BesouroEvent`.
+
 ---
 
 ## 7. UI
@@ -1529,7 +1623,7 @@ drawer costs nothing.
 ## 8. Configuration Reference
 
 `Besouro.configure(options)` takes `BesouroOptions`. `inspectors` switches
-off the five that default on; the other four are enabled by their inspector method (§4).
+off the six that default on; the rest are enabled by their inspector method (§4).
 
 Payload truncation is deliberately absent from this table — the limits are fixed per
 inspector and listed in §5.1.
@@ -1545,14 +1639,15 @@ interface BesouroOptions {
   inspectors?: InspectorToggles; // turn off a default-on inspector
 }
 
-// The self-sufficient inspectors only — all default true. The other four are
-// governed by whether their inspector method was called, so listing them here would be
-// two switches for one lamp.
+// The self-sufficient inspectors only — all default true. The dependency-required
+// ones are governed by whether their inspector method was called, so listing them
+// here would be two switches for one lamp.
 interface InspectorToggles {
   network?: boolean;
   console?: boolean;
   websocket?: boolean;
   element?: boolean;
+  viewHierarchy?: boolean;
   fileSystem?: boolean;
 }
 
@@ -1564,8 +1659,12 @@ type Inspector =
   | 'notifications'
   | 'element'
   | 'asyncStorage'
+  | 'mmkv'
   | 'zustand'
-  | 'fileSystem';
+  | 'redux'
+  | 'jotai'
+  | 'fileSystem'
+  | 'viewHierarchy';
 ```
 
 The bubble takes no config. It is mounted natively (§13, `native/`), positioned and
@@ -1988,6 +2087,8 @@ src/
     redux/               // + utils/changed-paths.ts (drives the viewer flash)
     jotai/
     fileSystem/
+    viewHierarchy/       // the 3D stack: snapshot.ts, projection.ts, planes.ts
+                         //   + utils/ (camera, focus, visibility, dev-tooling)
     <inspector>/           // shape shared by all of them:
       interceptor.ts       //   install(): the capture mechanism, returns its own
                            //   uninstall (element installs a React DevTools hook;
@@ -2036,9 +2137,10 @@ modules it wraps — into the drawer bundle, which `drawer/InspectorTabs.tsx` al
 
 ### v1 (this spec)
 
-Twelve inspectors (Network, WebSocket, Socket.IO, Console, Notifications, Element,
-AsyncStorage, MMKV, Zustand, Redux, Jotai, File System), native bubble + drawer UI,
-persisted sessions with crash recovery, copy-as-cURL, export/share.
+Thirteen inspectors (Network, WebSocket, Socket.IO, Console, Notifications, Element,
+View Hierarchy, AsyncStorage, MMKV, Zustand, Redux, Jotai, File System), native
+bubble + drawer UI, persisted sessions with crash recovery, copy-as-cURL,
+export/share.
 
 ### Phase 2 (native-optional, behind same API)
 

@@ -73,6 +73,8 @@ const SELF_SUFFICIENT: Record<keyof InspectorToggles, Installer> = {
   // Nothing to patch or tear down — the browser is pulled from native lazily by
   // the tab. A noop keeps the install lifecycle uniform.
   fileSystem: () => () => {},
+  // Same: the Hierarchy tab captures on demand and intercepts nothing.
+  viewHierarchy: () => () => {},
 };
 
 function isSelfSufficient(

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-27
+
+### Added
+
+- **View Hierarchy** — the native view tree as an exploded 3D stack you can orbit,
+  beside the indented tree it came from. Double tap a view, in either half, to
+  narrow both to it. On by default, and read from platform getters rather than
+  React's internals, so it works the same in a release build.
+
 ## [0.1.0] - 2026-08-22
 
 First public release. Requires React Native 0.77+ on the New Architecture, or
@@ -31,5 +40,6 @@ Off until you hand Besouro the dependency they watch, so none of them is bundled
 - **Socket.IO** — events in both directions
 - **Notifications** — Expo, Firebase and Notifee, plus the device push token
 
-[unreleased]: https://github.com/EdgarJMesquita/besouro/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/EdgarJMesquita/besouro/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/EdgarJMesquita/besouro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/EdgarJMesquita/besouro/releases/tag/v0.1.0

@@ -29,6 +29,7 @@ const ALL: Inspector[] = [
   'redux',
   'jotai',
   'fileSystem',
+  'viewHierarchy',
 ];
 
 describe('INSPECTOR_ORDER', () => {
@@ -52,7 +53,11 @@ describe('INSPECTOR_ORDER', () => {
 
 describe('browser-class inspectors', () => {
   it('is exactly the set that records no events', () => {
-    expect([...BROWSER_INSPECTORS].sort()).toEqual(['element', 'fileSystem']);
+    expect([...BROWSER_INSPECTORS].sort()).toEqual([
+      'element',
+      'fileSystem',
+      'viewHierarchy',
+    ]);
   });
 
   it('classifies every inspector', () => {
