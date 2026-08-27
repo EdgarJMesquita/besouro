@@ -1,11 +1,12 @@
 /**
  * Public entry point — see {@link Besouro} for how to use it.
  *
- * Twelve inspectors ship, split by whether they can work on their own:
+ * Thirteen inspectors ship, split by whether they can work on their own:
  *
- * - **Self-sufficient** — network, console, websocket, element, fileSystem. They
- *   patch globals that are already there, so they run by default and
- *   `configure({ inspectors: { … } })` is how one gets switched off.
+ * - **Self-sufficient** — network, console, websocket, element, viewHierarchy,
+ *   fileSystem. They patch globals that are already there, or read the platform
+ *   on demand, so they run by default and `configure({ inspectors: { … } })` is
+ *   how one gets switched off.
  * - **Dependency-required** — asyncStorage, mmkv, zustand, redux, jotai, socketio,
  *   notifications. Each
  *   watches a module or store the consumer owns, and the library never imports one
@@ -233,8 +234,9 @@ export interface BesouroBuilder {
  * Your app's devtools. Set it up once, as early as your app starts, from a module
  * you require behind `if (__DEV__)`.
  *
- * Network, console, websocket, element and fileSystem are already on — `init()`
- * alone is a working setup. The other seven turn on with the call that feeds them.
+ * Network, console, websocket, element, viewHierarchy and fileSystem are already on —
+ * `init()` alone is a working setup. The other seven turn on with the call that
+ * feeds them.
  *
  * @example
  * ```ts

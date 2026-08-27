@@ -20,7 +20,9 @@ import {
   ExpandIcon,
   GearIcon,
   GridIcon,
+  GridOutlineIcon,
   HistoryIcon,
+  LayersIcon,
   ListIcon,
   MinimizeIcon,
   RefreshIcon,
@@ -49,6 +51,8 @@ export type IconName =
   | 'file'
   | 'list'
   | 'grid'
+  | 'grid-outline'
+  | 'layers'
   | 'align-left'
   | 'align-center'
   | 'align-right';
@@ -58,9 +62,10 @@ interface IconProps {
   size?: number;
   color: string;
   /**
-   * Color painted behind the icon — only used by the gear, whose center hole
-   * must match the surface it sits on to read as hollow. Defaults to `color`
-   * (a solid center) when omitted.
+   * Color painted behind the icon, for the two shapes that need to occlude
+   * something: the gear's center hole, and the near sheet of `layers`, which
+   * hides the ones behind it. Both must match the surface the icon sits on.
+   * Defaults to `color` when omitted.
    */
   background?: string;
 }
@@ -110,6 +115,16 @@ export function Icon({
       return <ListIcon size={size} color={color} />;
     case 'grid':
       return <GridIcon size={size} color={color} />;
+    case 'grid-outline':
+      return <GridOutlineIcon size={size} color={color} />;
+    case 'layers':
+      return (
+        <LayersIcon
+          size={size}
+          color={color}
+          background={background ?? color}
+        />
+      );
     case 'align-left':
       return <AlignLinesIcon size={size} color={color} align="flex-start" />;
     case 'align-center':

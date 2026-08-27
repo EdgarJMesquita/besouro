@@ -24,6 +24,7 @@ export interface InspectorToggles {
   console?: boolean;
   websocket?: boolean;
   element?: boolean;
+  viewHierarchy?: boolean;
   fileSystem?: boolean;
 }
 
@@ -46,8 +47,8 @@ export interface BesouroOptions {
   accent?: string;
   locale?: LocalePreference;
   /**
-   * Turn off inspectors that are otherwise on by default. Omit it and all five
-   * self-sufficient inspectors run.
+   * Turn off inspectors that are otherwise on by default. Omit it and every
+   * self-sufficient inspector runs.
    */
   inspectors?: InspectorToggles;
 }

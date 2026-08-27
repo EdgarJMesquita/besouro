@@ -37,6 +37,7 @@ import { ZustandTab } from '../inspectors/zustand/ZustandTab';
 import { ReduxTab } from '../inspectors/redux/ReduxTab';
 import { JotaiTab } from '../inspectors/jotai/JotaiTab';
 import { FileSystemTab } from '../inspectors/fileSystem/FileSystemTab';
+import { ViewHierarchyTab } from '../inspectors/viewHierarchy/ViewHierarchyTab';
 import { layout } from '../shared/styles';
 import { StyleSheet } from 'react-native';
 import { useMemo } from 'react';
@@ -174,6 +175,8 @@ function TabBody({ inspector }: { inspector: Inspector }): React.ReactNode {
       return <ReduxTab />;
     case 'jotai':
       return <JotaiTab />;
+    case 'viewHierarchy':
+      return <ViewHierarchyTab />;
     case 'fileSystem':
       return <FileSystemTab />;
   }

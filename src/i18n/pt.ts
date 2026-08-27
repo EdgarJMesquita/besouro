@@ -106,6 +106,7 @@ export const pt: StringTable = {
   tabRedux: 'Redux',
   tabJotai: 'Jotai',
   tabElement: 'Elemento',
+  tabViewHierarchy: 'Hierarquia de views',
   tabFileSystem: 'Arquivos',
   noStores: 'Nenhuma store anexada ainda.',
   noInstances: 'Nenhuma instância MMKV anexada ainda.',
@@ -139,6 +140,18 @@ export const pt: StringTable = {
   previewFailed: 'Não foi possível renderizar esta página.',
   fileSystemUnavailable:
     'A navegação de arquivos requer um build de desenvolvimento — indisponível no Expo Go.',
+  viewHierarchyHint: 'Não foi possível ler a árvore de views.',
+  viewHierarchyUnavailable:
+    'A hierarquia de views precisa de um development build — indisponível no Expo Go.',
+  viewHierarchyDepth: 'Profundidade',
+  viewHierarchySpread: 'Espaço',
+  viewHierarchyReset: 'Redefinir',
+  viewHierarchyAngle: 'Ver em ângulo',
+  viewHierarchyClearSelection: 'Limpar seleção',
+  viewHierarchyFocused: 'Em foco',
+  viewHierarchyUnfocus: 'Mostrar a árvore inteira',
+  viewHierarchyTruncated:
+    'Árvore parcial — a captura parou no limite. Faltam views.',
   modified: 'Modificado',
   size: 'Tamanho',
   path: 'Caminho',
