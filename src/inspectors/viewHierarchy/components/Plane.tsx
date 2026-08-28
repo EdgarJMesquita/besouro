@@ -47,6 +47,7 @@ const Plane = memo(function PlaneSheet({
   nodes,
   origin,
   fit,
+  zoom,
   framed,
   filled,
   zBack,
@@ -60,13 +61,22 @@ const Plane = memo(function PlaneSheet({
   nodes: PlacedNode[];
   /** The rectangle a sheet represents — the screen, or the focused view. */
   origin: Frame;
+  /** dp on the stage per captured dp, zoom included — the sheet's own size. */
   fit: number;
+  /**
+   * The camera's magnification, on its own.
+   *
+   * `fit` already carries it across the sheet, but depth is measured apart from
+   * the sheet — `zBack` and the lens are in the scene's dp — and the picture only
+   * holds together if the same multiplier reaches those too. See `../projection`.
+   */
+  zoom: number;
   /** Draw the screen outline on this sheet. True for exactly one — see below. */
   framed: boolean;
   /** Give this sheet's views a body. False on the root sheet — see `Box`. */
   filled: boolean;
   zBack: number;
-  /** What the stack turns around — see the pivot in {@link Exploded}. */
+  /** What the stack turns around, in scene dp — see the pivot in {@link Exploded}. */
   pivot: Pivot;
   /** Projected scale of the nearest sheet — the near end of the fade range. */
   frontScale: number;
@@ -77,7 +87,12 @@ const Plane = memo(function PlaneSheet({
   onSelect: (index: number) => void;
 }): React.ReactNode {
   const { theme } = useBesouroUI();
-  const { translateX, translateY, scale } = projectPlane(zBack, orbit, pivot);
+  const { translateX, translateY, scale } = projectPlane(
+    zBack,
+    orbit,
+    pivot,
+    zoom
+  );
   // Aerial perspective — the depth cue that survives having no fills on the
   // sheets themselves. `scale` is already the physical measure of how far away a
   // sheet is, so the fade rides on it.
@@ -146,7 +161,14 @@ const Plane = memo(function PlaneSheet({
           transform: [
             // Perspective first in the list = outermost = applied to the
             // rotations below it, foreshortening the sheet within itself.
-            { perspective: PERSPECTIVE },
+            //
+            // Scaled with the zoom because the sheet is: a lens held at a fixed
+            // distance from a sheet twice the size foreshortens it twice as
+            // hard, so a pinch would turn the stack as it magnified it. Moving
+            // the lens back by the same factor is what keeps zoom a magnifier
+            // and nothing else — the same reasoning as the divisor in
+            // `projectPlane`.
+            { perspective: PERSPECTIVE * zoom },
             { rotateX: `${orbit.pitch}deg` },
             { rotateY: `${orbit.yaw}deg` },
             // The projected size of a plane at this depth. Computed, not guessed:

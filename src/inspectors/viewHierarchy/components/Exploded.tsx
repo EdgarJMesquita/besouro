@@ -17,9 +17,9 @@
  * move that. The sheets themselves are `Plane`, and what is drawn on them is
  * `Box`.
  *
- * One finger orbits, two fingers move the camera — spread to zoom, slide to pan —
- * and a tap still falls through to select a view. The camera moves; the stack
- * never does.
+ * One finger orbits, two fingers move the camera — spread to zoom about the
+ * point between them, slide to pan — and a tap still falls through to select a
+ * view. The camera moves; the stack never does.
  *
  * `PanResponder` rather than a gesture library: this is a devtool that will not
  * add a peer dependency to a host app for three gestures.
@@ -56,6 +56,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   ORBIT_SENSITIVITY,
+  pinchPan,
   type Camera,
 } from '../utils/camera';
 import { coversFrame, frameOf, subtreeRange } from '../utils/focus';
@@ -121,9 +122,34 @@ export function Exploded({
   const [view, setView] = useState<Camera>(HOME);
   const orbit: Orbit = view;
 
+  const stage = useRef<React.ComponentRef<typeof View>>(null);
+  /**
+   * The middle of the stage, in the frame touches arrive in.
+   *
+   * Needed because a pinch has to know where on the stage the fingers are, and a
+   * touch only says where it is on the root view. `onLayout` gives the stage's
+   * size but its position relative to a parent, which is not that frame, so this
+   * is measured rather than derived.
+   *
+   * `measure` and deliberately not `measureInWindow`, which is the same numbers
+   * plus the viewport offset — the root view's own position in the window. On
+   * iOS that offset is zero and the two are interchangeable; on Android the root
+   * sits below the status bar, so `measureInWindow` reads a stage some 24 to 48dp
+   * lower than the one the touches are describing, and the zoom anchors that far
+   * above the fingers. A bug that cannot reproduce on the platform it is most
+   * likely to be tested on, which is reason enough to name it here.
+   *
+   * Re-measured on every layout, which is every time the drawer opens or is
+   * resized — the moves that can put the stage somewhere else.
+   */
+  const centre = useRef({ x: 0, y: 0 });
+
   const onLayout = useCallback((event: LayoutChangeEvent): void => {
     const { width, height } = event.nativeEvent.layout;
     setBox({ width, height });
+    stage.current?.measure((_x, _y, measured, high, pageX, pageY) => {
+      centre.current = { x: pageX + measured / 2, y: pageY + high / 2 };
+    });
   }, []);
 
   // Refs rather than reading state in the handlers: the PanResponder is built
@@ -132,12 +158,14 @@ export function Exploded({
   const viewRef = useRef(view);
   viewRef.current = view;
   /**
-   * Where the current gesture phase started — the view at that moment, plus the
-   * accumulated pan offset then. Both halves matter: `gesture.dx` keeps counting
-   * across a finger going down or up, so re-anchoring on every change of finger
-   * count is what stops the stack lurching when a pinch becomes a drag.
+   * Where the current gesture phase started — the view at that moment, the
+   * accumulated pan offset then, and where the fingers were. All of it matters:
+   * `gesture.dx` keeps counting across a finger going down or up, so re-anchoring
+   * on every change of finger count is what stops the stack lurching when a pinch
+   * becomes a drag, and the pinch holds its own starting midpoint still rather
+   * than the middle of the stage.
    */
-  const anchor = useRef({ ...HOME, dx: 0, dy: 0, pinch: 0 });
+  const anchor = useRef({ ...HOME, dx: 0, dy: 0, pinch: 0, focal: ORIGIN });
   const fingers = useRef(0);
 
   const responder = useMemo(
@@ -169,22 +197,34 @@ export function Exploded({
           if (touches.length >= 2) {
             const separation = touchDistance(touches[0]!, touches[1]!);
             if (anchor.current.pinch > 0) {
+              // Two fingers move the camera and nothing else: spread to zoom,
+              // slide to pan. Orbit stays on one finger deliberately — the
+              // midpoint of a pinch never holds still, so folding rotation in
+              // here makes the stack squirm while you are trying to frame it.
+              const zoom = clamp(
+                anchor.current.zoom * (separation / anchor.current.pinch),
+                MIN_ZOOM,
+                MAX_ZOOM
+              );
               setView({
                 ...viewRef.current,
-                // Two fingers move the camera and nothing else: spread to zoom,
-                // slide to pan. Orbit stays on one finger deliberately — the
-                // centroid of a pinch never holds still, so folding rotation in
-                // here makes the stack squirm while you are trying to frame it.
-                zoom: clamp(
-                  anchor.current.zoom * (separation / anchor.current.pinch),
-                  MIN_ZOOM,
-                  MAX_ZOOM
+                zoom,
+                // Zoom and pan in one solve, about the fingers' midpoint — see
+                // `pinchPan`. Scaling and sliding were separate terms before,
+                // and the missing piece was that a zoom about the middle of the
+                // stage moves everything the fingers are not on top of: the
+                // thing you pinched grew *and* walked away, and the slide term
+                // could only be the distance the hand itself had travelled.
+                //
+                // The midpoint rather than `gesture.dx/dy`, which is the same
+                // quantity in increments and cannot say where the gesture is on
+                // the stage — which is the half this needs.
+                pan: pinchPan(
+                  anchor.current,
+                  anchor.current.focal,
+                  midpoint(touches[0]!, touches[1]!, centre.current),
+                  zoom
                 ),
-                // `gesture.dx/dy` track the centroid, which is exactly the pan.
-                pan: {
-                  x: anchor.current.pan.x + (gesture.dx - anchor.current.dx),
-                  y: anchor.current.pan.y + (gesture.dy - anchor.current.dy),
-                },
               });
             }
             return;
@@ -222,11 +262,16 @@ export function Exploded({
   ): void {
     const touches = event.nativeEvent.touches;
     fingers.current = touches.length;
+    const pair = touches.length >= 2;
     anchor.current = {
       ...viewRef.current,
       dx: gesture.dx,
       dy: gesture.dy,
-      pinch: touches.length >= 2 ? touchDistance(touches[0]!, touches[1]!) : 0,
+      pinch: pair ? touchDistance(touches[0]!, touches[1]!) : 0,
+      // The point the zoom holds still for this phase. Re-taken with the rest of
+      // the anchor, so lifting a finger and pinching again zooms about wherever
+      // the fingers went down that time rather than about where they first did.
+      focal: pair ? midpoint(touches[0]!, touches[1]!, centre.current) : ORIGIN,
     };
   }
 
@@ -304,15 +349,26 @@ export function Exploded({
   const far = Math.min(depth.to, maxDepth);
   const near = Math.min(depth.from, far);
 
-  // Fit the frame into the stage. See `STAGE_MARGIN` for the shortfall.
-  const fit = useMemo(() => {
+  /**
+   * Fit the frame into the stage — dp on the stage per captured dp, *before*
+   * zoom. See `STAGE_MARGIN` for the shortfall.
+   *
+   * This is the scene's own unit, and the one the depths are already in: the
+   * spread between sheets, the pivot and `frameStack` all work here, so that
+   * zoom stays a single multiplier applied to a finished picture rather than a
+   * term to remember in each of them. `../projection` has the derivation, and
+   * the concertina it is there to stop.
+   */
+  const frameFit = useMemo(() => {
     if (!box.width || !box.height || !origin.width || !origin.height) return 0;
     return (
       Math.min(box.width / origin.width, box.height / origin.height) *
-      STAGE_MARGIN *
-      view.zoom
+      STAGE_MARGIN
     );
-  }, [box, origin.width, origin.height, view.zoom]);
+  }, [box, origin.width, origin.height]);
+
+  /** What the sheets are actually drawn at. */
+  const fit = frameFit * view.zoom;
 
   /**
    * What the stack turns around.
@@ -334,7 +390,14 @@ export function Exploded({
    * A focused subtree needs no case of its own — focusing selects its root.
    */
   const pivot = useMemo((): Pivot => {
-    const viewport = { ...CENTRE, x: -view.pan.x, y: -view.pan.y };
+    // In the scene's dp, like everything else the projection is handed — so the
+    // pan, which is a screen offset applied to the magnified picture, comes back
+    // through the zoom to say which scene point the stage is centred on.
+    const viewport = {
+      ...CENTRE,
+      x: -view.pan.x / view.zoom,
+      y: -view.pan.y / view.zoom,
+    };
     if (selected == null || selected < start || selected >= end)
       return viewport;
     const node = snapshot.nodes[selected];
@@ -348,18 +411,36 @@ export function Exploded({
     return {
       // The view's centre as an offset from the sheet's centre. Sheets are
       // centred on the stage, so that offset *is* the projection's x and y.
-      x: (node.left + node.width / 2 - origin.left - origin.width / 2) * fit,
-      y: (node.top + node.height / 2 - origin.top - origin.height / 2) * fit,
+      x:
+        (node.left + node.width / 2 - origin.left - origin.width / 2) *
+        frameFit,
+      y:
+        (node.top + node.height / 2 - origin.top - origin.height / 2) *
+        frameFit,
       z: -(far - plane) * spread,
     };
     // `origin`, `start`, `end` and `base` all derive from what is listed here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, snapshot, planes, focus, near, far, spread, fit, view.pan]);
+  }, [
+    selected,
+    snapshot,
+    planes,
+    focus,
+    near,
+    far,
+    spread,
+    frameFit,
+    view.pan,
+    view.zoom,
+  ]);
 
   // The fade is normalised against the two ends of the stack rather than against
   // an absolute curve, so the whole brightness range is spent across however many
   // planes are on screen. Both ends are measured, because with a pivot off the
   // stack's axis the frontmost sheet is no longer necessarily at scale 1.
+  // No zoom passed: the divisor does not move with it — magnifying the scene
+  // moves the lens back by as much — so the stack fades the same close up as far
+  // out, which is what a magnifier should do.
   const frontScale = projectPlane(0, orbit, pivot).scale;
   const backScale = projectPlane((far - near) * spread, orbit, pivot).scale;
 
@@ -386,11 +467,10 @@ export function Exploded({
     for (let plane = near; plane <= far; plane++) {
       zBacks.push((far - plane) * spread);
     }
-    // `fit` is the zoom-1 fit here: this branch only runs at HOME.
     const framed = frameStack(
       zBacks,
       ANGLED,
-      { width: origin.width * fit, height: origin.height * fit },
+      { width: origin.width * frameFit, height: origin.height * frameFit },
       box,
       pivot
     );
@@ -399,7 +479,7 @@ export function Exploded({
       zoom: clamp(framed.zoom, MIN_ZOOM, MAX_ZOOM),
       pan: framed.pan,
     });
-  }, [near, far, spread, origin.width, origin.height, fit, box, pivot]);
+  }, [near, far, spread, origin.width, origin.height, frameFit, box, pivot]);
 
   /**
    * Focus resets the camera, unfocusing puts it back.
@@ -428,6 +508,7 @@ export function Exploded({
 
   return (
     <View
+      ref={stage}
       onLayout={onLayout}
       style={[styles.stage, { backgroundColor: theme.surfaceRaised }]}
       {...responder.panHandlers}
@@ -477,6 +558,7 @@ export function Exploded({
                   nodes={nodes}
                   origin={origin}
                   fit={fit}
+                  zoom={view.zoom}
                   // The backmost sheet *drawn* carries the outline, not plane 0.
                   // With the back of the stack cut away there would otherwise be
                   // no rectangle saying where the screen edges are — and it is the
@@ -562,6 +644,24 @@ export function Exploded({
 function touchDistance(a: NativeTouchEvent, b: NativeTouchEvent): number {
   return Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY);
 }
+
+/**
+ * Where two touches are centred, as an offset from the centre of the stage —
+ * the frame `pan` is in, and the frame the zoom has to be anchored in.
+ */
+function midpoint(
+  a: NativeTouchEvent,
+  b: NativeTouchEvent,
+  stage: { x: number; y: number }
+): { x: number; y: number } {
+  return {
+    x: (a.pageX + b.pageX) / 2 - stage.x,
+    y: (a.pageY + b.pageY) / 2 - stage.y,
+  };
+}
+
+/** Stand-in focal point while fewer than two fingers are down. Never read. */
+const ORIGIN = { x: 0, y: 0 };
 
 const styles = StyleSheet.create({
   stage: {

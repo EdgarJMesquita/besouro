@@ -32,6 +32,28 @@
  *
  * Screen y grows downward, matching CSS, so a negative pitch (looking down onto
  * the stack) yields a negative `translateY` — the far planes ride up the screen.
+ *
+ * ## Where zoom comes in
+ *
+ * Everything here works in the scene's own dp — the capture fitted to the stage,
+ * before zoom — and `zoom` magnifies the finished projection. It is not a term
+ * threaded through the derivation, and that is the point: a zoom is the same
+ * picture seen closer, so it has to take the depth with it. Scaling only what
+ * lies across the sheets leaves the gaps between them fixed in dp, and the stack
+ * concertinas as you pinch — sheets crushed together zoomed in, adrift zoomed out.
+ *
+ * A magnifier, then, and not a camera walking toward the stack. The dolly is the
+ * more literal reading of a zoom and it was considered: hold the lens still and
+ * scale the scene into it, and convergence rises as you approach — the near
+ * sheets fan apart while the far ones bunch up behind them. Two reasons it is
+ * not what happens here. It does not survive the controls: twenty planes at a
+ * spread of 60 is 1200dp of stack, which at 4× is 4800dp against a 2200dp lens,
+ * and past the lens `P/(P − z)` changes sign and renders the back of the stack
+ * inside out. The pivot is a second way in, since its rotated `y` feeds `z` and
+ * it scales with zoom too. And convergence is worth holding still on its own
+ * account: it is the cue that says *stack*, {@link PERSPECTIVE} is tuned for how
+ * it reads, and how far apart the sheets sit already has a control of its own in
+ * the spread — a dolly would be a second, indirect one fighting it.
  */
 
 /**
@@ -113,7 +135,19 @@ export type ProjectedPlane = {
 export function projectPlane(
   zBack: number,
   orbit: Orbit,
-  pivot: Pivot = CENTRE
+  pivot: Pivot = CENTRE,
+  /**
+   * Magnification of the finished picture. `zBack` and `pivot` are in the
+   * scene's own dp, so this is the one place zoom enters — see the module note.
+   *
+   * It moves the translations and deliberately not `scale`: the sheet's own size
+   * is drawn at the zoomed fit already, and multiplying here as well would apply
+   * the zoom to it twice. Which leaves the perspective divisor untouched by zoom
+   * — correct, and not a shortcut. Magnifying the scene means moving the lens
+   * back by as much, and `P/(P − z)` with both scaled is the divisor unchanged:
+   * the stack converges exactly as hard close up as far out.
+   */
+  zoom: number = 1
 ): ProjectedPlane {
   const yaw = toRadians(orbit.yaw);
   const pitch = toRadians(orbit.pitch);
@@ -136,7 +170,7 @@ export function projectPlane(
   const z = pivot.z + dy * Math.sin(pitch) + deep * Math.cos(pitch);
 
   const scale = PERSPECTIVE / (PERSPECTIVE - z);
-  return { translateX: x * scale, translateY: y * scale, scale };
+  return { translateX: x * scale * zoom, translateY: y * scale * zoom, scale };
 }
 
 function toRadians(degrees: number): number {
@@ -165,56 +199,35 @@ function toRadians(degrees: number): number {
 export function frameStack(
   zBacks: number[],
   orbit: Orbit,
-  /** The sheet's rendered size at zoom 1. */
+  /** The sheet's size in the scene's own dp — the fit, before zoom. */
   sheet: { width: number; height: number },
   stage: { width: number; height: number },
-  /**
-   * The pivot **at zoom 1**, like `sheet`. Its `x` and `y` are screen offsets
-   * and so scale with zoom, which the search has to account for or it solves
-   * against a stack that will sit somewhere else once the zoom is applied. `z`
-   * is a plane separation and does not scale.
-   */
+  /** The pivot, in the same scene dp as `sheet` and `zBacks`. */
   pivot: Pivot = CENTRE
 ): { zoom: number; pan: { x: number; y: number } } {
   const still = { zoom: 1, pan: { x: 0, y: 0 } };
   if (!zBacks.length || stage.width <= 0 || stage.height <= 0) return still;
 
-  // Full size first. Bisection converges *towards* its upper bound and never
-  // reaches it, so without this a stack that already fits comes back at
-  // 0.99999995 — a zoom wrong in no visible way and wrong in every comparison.
-  if (fits(zBacks, orbit, sheet, 1, pivot, stage)) {
-    return { zoom: 1, pan: centreOf(boundsAt(zBacks, orbit, sheet, 1, pivot)) };
-  }
+  const box = boundsAt(zBacks, orbit, sheet, pivot);
+  const width = box.maxX - box.minX;
+  const height = box.maxY - box.minY;
+  if (width <= 0 || height <= 0) return still;
 
-  // Solved by bisection rather than algebra. A sheet's extent scales with zoom
-  // but the fan between sheets does not, so the stack's width is a max of linear
-  // terms minus a min of them — monotonic in zoom, which is all bisection needs,
-  // and far easier to read than the closed form.
-  let low = MIN_FRAME_ZOOM;
-  let high = 1;
-  for (let step = 0; step < 24; step++) {
-    const mid = (low + high) / 2;
-    if (fits(zBacks, orbit, sheet, mid, pivot, stage)) low = mid;
-    else high = mid;
-  }
-  return {
-    zoom: low,
-    pan: centreOf(boundsAt(zBacks, orbit, sheet, low, pivot)),
-  };
-}
-
-function fits(
-  zBacks: number[],
-  orbit: Orbit,
-  sheet: { width: number; height: number },
-  zoom: number,
-  pivot: Pivot,
-  stage: { width: number; height: number }
-): boolean {
-  const box = boundsAt(zBacks, orbit, sheet, zoom, pivot);
-  return (
-    box.maxX - box.minX <= stage.width && box.maxY - box.minY <= stage.height
+  // One division per axis, because zoom magnifies the whole scene — depth and
+  // all — so the stack's screen extent is simply proportional to it. This was a
+  // bisection while the fan between sheets was fixed in dp: the extent was then
+  // a max of linear terms minus a min of them, monotonic in zoom but with no
+  // closed form worth reading. Zoom taking the depth with it collapsed the
+  // search to this.
+  //
+  // Never past 1 — the toggle frames a stack that has run off the stage, it does
+  // not magnify one that fits.
+  const zoom = Math.max(
+    MIN_FRAME_ZOOM,
+    Math.min(1, stage.width / width, stage.height / height)
   );
+  const middle = centreOf(box);
+  return { zoom, pan: { x: middle.x * zoom, y: middle.y * zoom } };
 }
 
 /**
@@ -231,37 +244,31 @@ function centreOf(box: {
 }
 
 /**
- * Floor on the search. Below this the stack is too small to read anyway, so a
+ * Floor on the framing. Below this the stack is too small to read anyway, so a
  * stack that will not fit at this zoom is one the camera cannot save — pinch and
  * pan are what is left.
  */
 const MIN_FRAME_ZOOM = 0.15;
 
-/** Screen bounds of every drawn sheet, at one zoom. */
+/** Screen bounds of every drawn sheet, in the scene's dp. */
 function boundsAt(
   zBacks: number[],
   orbit: Orbit,
   sheet: { width: number; height: number },
-  zoom: number,
   pivot: Pivot
 ): { minX: number; maxX: number; minY: number; maxY: number } {
   const yaw = toRadians(orbit.yaw);
   const pitch = toRadians(orbit.pitch);
-  // See the `pivot` note on `frameStack`: the offset moves with the zoom being
-  // tried, the depth does not.
-  const at: Pivot = { x: pivot.x * zoom, y: pivot.y * zoom, z: pivot.z };
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
   for (const zBack of zBacks) {
-    const { translateX, translateY, scale } = projectPlane(zBack, orbit, at);
+    const { translateX, translateY, scale } = projectPlane(zBack, orbit, pivot);
     // A rectangle turned about the vertical axis projects `cos(yaw)` as wide,
     // and tilted about the horizontal one, `cos(pitch)` as tall.
-    const halfWidth =
-      (sheet.width * zoom * scale * Math.abs(Math.cos(yaw))) / 2;
-    const halfHeight =
-      (sheet.height * zoom * scale * Math.abs(Math.cos(pitch))) / 2;
+    const halfWidth = (sheet.width * scale * Math.abs(Math.cos(yaw))) / 2;
+    const halfHeight = (sheet.height * scale * Math.abs(Math.cos(pitch))) / 2;
     minX = Math.min(minX, translateX - halfWidth);
     maxX = Math.max(maxX, translateX + halfWidth);
     minY = Math.min(minY, translateY - halfHeight);
