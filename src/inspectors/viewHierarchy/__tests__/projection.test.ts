@@ -125,6 +125,40 @@ describe('projectPlane with a pivot', () => {
   });
 });
 
+describe('projectPlane under zoom', () => {
+  const ORBIT = { yaw: 26, pitch: -16 };
+
+  it('magnifies the picture without redrawing it', () => {
+    const pivot = { x: 40, y: -20, z: -60 };
+    for (const zBack of [0, 30, 90, 150]) {
+      const close = projectPlane(zBack, ORBIT, pivot, 3);
+      const unit = projectPlane(zBack, ORBIT, pivot);
+      expect(close.translateX).toBeCloseTo(unit.translateX * 3);
+      expect(close.translateY).toBeCloseTo(unit.translateY * 3);
+      // Untouched: the sheet's own size already carries the zoom, and the lens
+      // moves back with the scene, so the stack converges the same at any zoom.
+      expect(close.scale).toBe(unit.scale);
+    }
+  });
+
+  it('keeps the gap between sheets in step with the sheets', () => {
+    // The bug this is here for. With the fan fixed in dp while the sheets grew,
+    // pinching in crushed the stack flat and pinching out set it adrift — the
+    // one thing the exploded view exists to show, coming and going with the
+    // zoom. The separation has to grow by exactly what the sheets grow by.
+    const gapAt = (zoom: number): number => {
+      const front = projectPlane(0, ORBIT, CENTRE, zoom);
+      const behind = projectPlane(60, ORBIT, CENTRE, zoom);
+      return Math.hypot(
+        behind.translateX - front.translateX,
+        behind.translateY - front.translateY
+      );
+    };
+    expect(gapAt(4)).toBeCloseTo(gapAt(1) * 4);
+    expect(gapAt(0.5)).toBeCloseTo(gapAt(1) * 0.5);
+  });
+});
+
 describe('frameStack', () => {
   const SHEET = { width: 300, height: 640 };
   const STAGE = { width: 340, height: 380 };
@@ -184,7 +218,16 @@ function extentOf(
   let minY = Infinity;
   let maxY = -Infinity;
   for (const zBack of zBacks) {
-    const { translateX, translateY, scale } = projectPlane(zBack, orbit);
+    // Zoom through the projection, not just across the sheet: it magnifies the
+    // depth too, which is the whole reason `frameStack` can divide rather than
+    // search. Modelled here the old way — sheets scaled, fan fixed — this
+    // helper would agree with an implementation that lets the stack concertina.
+    const { translateX, translateY, scale } = projectPlane(
+      zBack,
+      orbit,
+      CENTRE,
+      zoom
+    );
     const halfWidth =
       (sheet.width * zoom * scale * Math.abs(Math.cos(yaw))) / 2;
     const halfHeight =

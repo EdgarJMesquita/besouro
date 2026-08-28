@@ -100,3 +100,44 @@ export function isMoved(camera: Camera): boolean {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+/**
+ * The pan that keeps the point under the fingers under the fingers.
+ *
+ * A pinch that only changes `zoom` scales the picture about the middle of the
+ * stage, so zooming into a row near the top edge sends it off the top as it
+ * grows and the gesture becomes a chase — pinch, lose it, pan it back, pinch
+ * again. What a pinch means is "make *this* bigger", and this solves the pan for
+ * that: the scene point under the fingers when the pinch started stays under
+ * them, wherever they have since moved to.
+ *
+ * Both midpoints are offsets from the centre of the stage, because that is where
+ * `pan` is measured from.
+ *
+ * Exact at any orbit, and only because zoom magnifies the whole scene — the fan
+ * between the sheets along with everything across them, see `../projection`. It
+ * holds because that makes a change of zoom a uniform scale about the scene's
+ * origin, so a point's distance from that origin is all this needs to know about
+ * it. Were the depth left out of the zoom, part of where a box lands on screen
+ * would not scale and the hold would drift by that share.
+ *
+ * Pass the zoom *after* clamping. At either end of the range the ratio then stops
+ * growing with the fingers, which is what stops the picture creeping while a
+ * pinch pushes against a limit it has already reached.
+ */
+export function pinchPan(
+  /** The camera when this pinch phase started. */
+  start: { zoom: number; pan: { x: number; y: number } },
+  /** Midpoint of the two fingers then. */
+  from: { x: number; y: number },
+  /** Midpoint now. */
+  to: { x: number; y: number },
+  /** The zoom the pinch has reached, already clamped to the usable range. */
+  zoom: number
+): { x: number; y: number } {
+  const ratio = zoom / start.zoom;
+  return {
+    x: to.x - (from.x - start.pan.x) * ratio,
+    y: to.y - (from.y - start.pan.y) * ratio,
+  };
+}
