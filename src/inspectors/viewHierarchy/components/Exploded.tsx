@@ -371,68 +371,39 @@ export function Exploded({
   const fit = frameFit * view.zoom;
 
   /**
-   * What the stack turns around.
+   * What the stack turns around: whatever is in the middle of the stage.
    *
-   * Two answers, in order, and neither asks for anything the user has not
-   * already done:
+   * The scene is translated by `pan`, so the point at the centre of the stage
+   * sits at `(−pan.x, −pan.y)` in the projection's own space — divided back
+   * through the zoom, which is the one conversion needed, since `pan` is a
+   * screen offset applied to a magnified picture while the projection works in
+   * the scene's own dp. No extra state, and it is what was missing before: zoom
+   * into a corner and orbit, and the corner swung away because the stack was
+   * still turning around a middle that had left the screen.
    *
-   * 1. **The selected view.** You picked it because it is what you are looking
-   *    at, so it is what an orbit should hold still. Its own plane sets the
-   *    pivot's depth too, so the box stays put on screen while everything turns
-   *    around it, rather than sliding as the stack swings.
-   * 2. **Nothing selected — so whatever is in the middle of the stage.** The
-   *    scene is translated by `pan`, so the point at the centre of the stage
-   *    sits at `(−pan.x, −pan.y)` in the projection's own space. No extra state,
-   *    and it is exactly what was missing before: zoom into a corner and orbit,
-   *    and the corner swung away because the stack was still turning around a
-   *    middle that had left the screen.
+   * The selected view was the first answer here, on the reasoning that you
+   * picked it because it is what you are looking at. It bought less than it
+   * cost. A pivot is not only what an orbit turns around: the projection places
+   * every sheet relative to it, so *changing* it moves the picture with the
+   * stack standing still. Tapping a box slid the whole stack by how far that box
+   * sat off the axis — and by the zoom again on top of that, which is how
+   * selecting something while zoomed in threw the sheets off the stage. A
+   * selection is not a camera move and must not look like one, so it no longer
+   * reaches the camera at all.
    *
-   * A focused subtree needs no case of its own — focusing selects its root.
+   * Nothing is lost with it, because the gesture that *does* mean "take me to
+   * this one" already exists and is a separate one: the second tap focuses, and
+   * focusing re-frames the camera on purpose. A single tap only says which view
+   * the picture and the list are talking about.
    */
-  const pivot = useMemo((): Pivot => {
-    // In the scene's dp, like everything else the projection is handed — so the
-    // pan, which is a screen offset applied to the magnified picture, comes back
-    // through the zoom to say which scene point the stage is centred on.
-    const viewport = {
+  const pivot = useMemo(
+    (): Pivot => ({
       ...CENTRE,
       x: -view.pan.x / view.zoom,
       y: -view.pan.y / view.zoom,
-    };
-    if (selected == null || selected < start || selected >= end)
-      return viewport;
-    const node = snapshot.nodes[selected];
-    // Zero-area views are not drawn, so there is no box on screen to hold still.
-    if (!node || node.width <= 0 || node.height <= 0) return viewport;
-    const plane = clamp(
-      Math.max(0, (planes[selected] ?? node.depth) - base),
-      near,
-      far
-    );
-    return {
-      // The view's centre as an offset from the sheet's centre. Sheets are
-      // centred on the stage, so that offset *is* the projection's x and y.
-      x:
-        (node.left + node.width / 2 - origin.left - origin.width / 2) *
-        frameFit,
-      y:
-        (node.top + node.height / 2 - origin.top - origin.height / 2) *
-        frameFit,
-      z: -(far - plane) * spread,
-    };
-    // `origin`, `start`, `end` and `base` all derive from what is listed here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    selected,
-    snapshot,
-    planes,
-    focus,
-    near,
-    far,
-    spread,
-    frameFit,
-    view.pan,
-    view.zoom,
-  ]);
+    }),
+    [view.pan, view.zoom]
+  );
 
   // The fade is normalised against the two ends of the stack rather than against
   // an absolute curve, so the whole brightness range is spent across however many
