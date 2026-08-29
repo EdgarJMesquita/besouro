@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-29
+
+### Fixed
+
+- **View Hierarchy** — selecting a view no longer moves the camera.
+
+### Changed
+
+- **View Hierarchy** — the button above the stack now reads "New snapshot", which is what it does.
+
 ## [0.2.1] - 2026-08-28
 
 ### Fixed
@@ -47,7 +57,8 @@ Off until you hand Besouro the dependency they watch, so none of them is bundled
 - **Socket.IO** — events in both directions
 - **Notifications** — Expo, Firebase and Notifee, plus the device push token
 
-[unreleased]: https://github.com/EdgarJMesquita/besouro/compare/v0.2.1...HEAD
+[unreleased]: https://github.com/EdgarJMesquita/besouro/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/EdgarJMesquita/besouro/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/EdgarJMesquita/besouro/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/EdgarJMesquita/besouro/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/EdgarJMesquita/besouro/releases/tag/v0.1.0
