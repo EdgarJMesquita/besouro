@@ -3,6 +3,12 @@
  *
  * The capture happens on mount, so this is for after the app has moved on — you
  * navigate, come back to the drawer, and want the tree as it is now.
+ *
+ * Labelled as taking a new snapshot rather than refreshing, which is what the
+ * button actually does: the tab draws one reading of the native tree, taken at
+ * a moment and frozen. Depth, spread, focus and the whole camera work over that
+ * reading without going back to the app, so the one control that *does* go back
+ * should not read like the others.
  */
 
 import { StyleSheet, View } from 'react-native';
@@ -21,7 +27,7 @@ export function Toolbar({
   return (
     <View style={styles.toolbar}>
       <TextButton
-        label={strings.refresh}
+        label={strings.viewHierarchyRefresh}
         tone="accent"
         onPress={onRefresh}
         style={layout.fill}

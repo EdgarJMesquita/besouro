@@ -144,6 +144,7 @@ export const en: StringTable = {
   viewHierarchyHint: 'The view tree could not be read.',
   viewHierarchyUnavailable:
     'The view hierarchy needs a development build — not available in Expo Go.',
+  viewHierarchyRefresh: 'New snapshot',
   viewHierarchyDepth: 'Depth',
   viewHierarchySpread: 'Spread',
   viewHierarchyReset: 'Reset view',

@@ -173,6 +173,16 @@ export interface StringTable {
    */
   viewHierarchyHint: string;
   viewHierarchyUnavailable: string;
+  /**
+   * The tab's one button: takes the capture again.
+   *
+   * Not "refresh" as the shared string has it. What the tab holds is one
+   * reading of the native tree, frozen at the moment it was taken — everything
+   * else on screen is a camera move over that reading. Pressing this does not
+   * bring the picture up to date, it replaces it with a new one, and the label
+   * says which of the two is happening.
+   */
+  viewHierarchyRefresh: string;
   /** Depth control label — how many depth planes the exploded stack draws. */
   viewHierarchyDepth: string;
   /** Spread control label — the gap between adjacent depth planes. */

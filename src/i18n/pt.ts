@@ -143,6 +143,7 @@ export const pt: StringTable = {
   viewHierarchyHint: 'Não foi possível ler a árvore de views.',
   viewHierarchyUnavailable:
     'A hierarquia de views precisa de um development build — indisponível no Expo Go.',
+  viewHierarchyRefresh: 'Nova captura',
   viewHierarchyDepth: 'Profundidade',
   viewHierarchySpread: 'Espaço',
   viewHierarchyReset: 'Redefinir',
