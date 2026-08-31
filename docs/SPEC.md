@@ -89,12 +89,12 @@ clearly exceed it (HAR + cURL export, 4-tab detail, URL ellipsis modes — see �
 | Environment       | Supported | Notes                                        |
 | ----------------- | --------- | -------------------------------------------- |
 | Expo Go           | ❌        | Ships a native TurboModule; use a Dev Client |
-| Expo Dev Client   | ✅        | SDK 53+                                      |
+| Expo Dev Client   | ✅        | SDK 54+                                      |
 | Bare React Native | ✅        |                                              |
 | New arch (Fabric) | ✅        | The only supported renderer                  |
 | Old architecture  | ❌        | Untested; see the note below                 |
 | React             | 19        |                                              |
-| React Native      | ≥ 0.77    | Developed against 0.83                       |
+| React Native      | ≥ 0.80    | Developed against 0.83                       |
 | iOS               | ≥ 15.1    |                                              |
 | Android           | ≥ 7 (24)  |                                              |
 
