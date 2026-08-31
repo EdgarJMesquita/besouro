@@ -20,8 +20,8 @@ thirteen inspectors. No laptop, no remote debugger.
 ## Requirements
 
 - **New Architecture** only
-- **React Native** 0.77+
-- **Expo** SDK 53+, in a dev build (Expo Go can't load native code)
+- **React Native** 0.80+
+- **Expo** SDK 54+, in a dev build (Expo Go can't load native code)
 
 ## Installation
 
