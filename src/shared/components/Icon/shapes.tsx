@@ -3,7 +3,7 @@
  * `Icon` dispatcher so that file stays a readable index of the set.
  */
 
-import { Platform, View, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 
 export interface ShapeProps {
   size: number;
@@ -811,15 +811,6 @@ export function RefreshIcon({ size, color }: ShapeProps): React.ReactNode {
   );
 }
 
-/**
- * The lean of `layers`, named per platform because the two do not agree on which
- * axis is which: what iOS renders for `skewY`, Android renders for `skewX`.
- * Written as the *result* rather than the property, so the glyph leans the same
- * way on both and the swap is stated once instead of being discovered again.
- */
-const LEAN: ViewStyle['transform'] =
-  Platform.OS === 'android' ? [{ skewX: '-18deg' }] : [{ skewY: '-18deg' }];
-
 // The `row` used by GridOutlineIcon's two rows of cells.
 const rowStyle: ViewStyle = { flexDirection: 'row' };
 
@@ -855,19 +846,21 @@ export function GridOutlineIcon({ size, color }: ShapeProps): React.ReactNode {
 }
 
 /**
- * Three sheets stacked back and to the left — the stack, angled.
+ * Three sheets stacked back and to the left — the stack, offset.
  *
  * The same figure the stage draws when the toggle is on, down to the direction:
  * far sheets ride left and up, which is where {@link ANGLED} sends them. Xcode's
  * view-debugger button is this shape, and it is the shape for the same reason —
  * a picture of the thing, not a symbol standing in for it.
  *
- * Skewed rather than rotated in perspective. A `rotateY` foreshortens the sheet,
- * so at an angle steep enough to read as turned each one came out a sliver, and
- * three slivers do not read as a stack of anything. A skew keeps the vertical
- * edges vertical and full width and tilts only the horizontal ones, which is
- * what the reference glyph does — and at fifteen pixels across, the honest
- * projection is the one that survives.
+ * Offset rather than turned or leaned. A `rotateY` foreshortens the sheet, so at
+ * an angle steep enough to read as turned each one came out a sliver, and three
+ * slivers do not read as a stack of anything. A skew avoids that — it keeps the
+ * vertical edges vertical and tilts only the horizontal ones, which is what the
+ * reference glyph does — but the two platforms disagree about which axis is
+ * which, and not consistently across React Native and Android versions, so the
+ * lean came out mirrored on some of them. Plain offsets draw the same figure
+ * everywhere; at fifteen pixels across the lean was the part that read least.
  *
  * Almost entirely overlapped, and that is the whole figure: one sheet drawn whole
  * with a sliver of each one behind it. Spaced evenly they carry equal weight and
@@ -914,10 +907,8 @@ export function LayersIcon({
     borderColor: color,
     borderRadius: Math.max(1, size * 0.08),
     backgroundColor: background,
-    // The skew spreads the shape vertically by `width · tan(18°)`, which is why
-    // the sheet is not as tall as the box: the lean claims the rest.
-    transform: LEAN,
   };
+
   return (
     <View style={{ width: size, height: size }}>
       {/* Painted back to front, so the nearest sheet — the lowest, rightmost
